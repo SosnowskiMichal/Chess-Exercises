@@ -1,0 +1,40 @@
+/* ======================================== */
+/* main window */
+
+MainWindow {
+    background-color: #2a2b2e;
+}
+
+/* ======================================== */
+/* main menu */
+
+#main-menu-container {
+    background-color: #5a5a66;
+    border-radius: 10px;
+}
+AppNameLabel {
+    font-size: 30px;
+    font-weight: bold;
+}
+MainMenuButton {
+    background-color: #2a2b2e;
+    border-radius: 4px;
+    padding: 10px 50px;
+}
+MainMenuButton:hover {
+    background-color: #3a3b3e;
+}
+MainMenuButton#quit_button {
+    background-color: #ff0000;
+}
+MainMenuButton#quit_button:hover {
+    background-color: #ff3333;
+}
+
+/* ======================================== */
+/* settings menu */
+
+
+
+/* ======================================== */
+/*  */
