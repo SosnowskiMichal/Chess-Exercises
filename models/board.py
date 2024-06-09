@@ -3,19 +3,27 @@ import os
 from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QSizePolicy
 from PyQt6.QtGui import QPixmap
 
+from .pieces import *
+
 
 class Board(QWidget):
-    def __init__(self, style='dark_wood', config=None):
+    def __init__(self, theme='dark_wood', config=None):
         super().__init__()
-        self.pieces = []
-        self.assets_dir = self.get_assets_dir(style)
-        self.initialize_layout()
+        self.theme = theme
+        self.config = config
+        self.assets_dir = self.get_assets_dir(self.theme)
         self.initialize_board()
-        self.initialize_pieces(config)
 
-    def get_assets_dir(self, style):
+    def initialize_board(self):
+        self.setMaximumSize(800, 800)
+        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+        self.initialize_layout()
+        self.initialize_squares()
+        # self.update_board(self.config)
+
+    def get_assets_dir(self, theme):
         assets_dir = os.path.join(
-            os.path.dirname(__file__), '..', 'assets', style)
+            os.path.dirname(__file__), '..', 'assets', 'boards', theme)
         return os.path.normpath(assets_dir)
 
     def initialize_layout(self):
@@ -23,15 +31,23 @@ class Board(QWidget):
         self.grid_layout.setSpacing(0)
         self.setLayout(self.grid_layout)
 
-    def initialize_board(self):
+    def initialize_squares(self):
         for row in range(8):
             for col in range(8):
                 square = ChessBoardSquare(row, col, self)
                 self.grid_layout.addWidget(square, row, col)
 
-    def initialize_pieces(self, config):
-        self.pieces.clear()
-        # TODO: implement
+    # def update_board(self, config):
+    #     self.king_white = King('white', self.theme)
+    #     self.king_black = King('black', self.theme)
+
+    #     square = self.grid_layout.itemAtPosition(0, 4).widget()
+    #     self.king_white.setParent(square)
+    #     self.king_white.move(0, 0)
+    #     self.king_white.show()
+
+        # self.grid_layout.addWidget(self.king_white, 0, 4)
+        # self.grid_layout.addWidget(self.king_black, 7, 4)
 
 
 class ChessBoardSquare(QLabel):
@@ -40,6 +56,11 @@ class ChessBoardSquare(QLabel):
         self.board = board
         self.row = row
         self.col = col
+        self.initialize_square()
+
+    def initialize_square(self):
+        self.setMaximumSize(100, 100)
+        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.set_background()
 
     def set_background(self):
@@ -47,11 +68,11 @@ class ChessBoardSquare(QLabel):
         assets_dir = self.board.assets_dir
         if (self.row + self.col) % 2 == 0:
             background_image = QPixmap(
-                os.path.join(assets_dir, 'board', 'black.png'))
+                os.path.join(assets_dir, 'black.png'))
             self.setPixmap(background_image)
         else:
             background_image = QPixmap(
-                os.path.join(assets_dir, 'board', 'white.png'))
+                os.path.join(assets_dir, 'white.png'))
             self.setPixmap(background_image)
 
     # def dragEnterEvent(self, event):
@@ -64,26 +85,3 @@ class ChessBoardSquare(QLabel):
     #     piece.move(0, 0)
     #     piece.show()
     #     event.acceptProposedAction()
-
-
-class ChessPiece(QLabel):
-    def __init__(self, piece_image):
-        super().__init__()
-    #     self.setPixmap(QPixmap(piece_image))
-    #     self.setScaledContents(True)
-    #     self.setFixedSize(80, 80)
-        
-    # def mousePressEvent(self, event):
-    #     if event.button() == Qt.MouseButton.LeftButton:
-    #         self.drag_start_position = event.position().toPoint()
-
-    # def mouseMoveEvent(self, event):
-    #     if event.buttons() & Qt.MouseButton.LeftButton:
-    #         drag = QDrag(self)
-    #         mime_data = QMimeData()
-            
-    #         drag.setMimeData(mime_data)
-    #         drag.setPixmap(self.pixmap())
-    #         drag.setHotSpot(event.position().toPoint() - self.rect().topLeft())
-            
-    #         drag.exec(Qt.DropAction.MoveAction)

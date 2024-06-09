@@ -6,35 +6,36 @@ MainWindow {
 }
 
 /* ======================================== */
-/* main menu */
+/* menu widgets */
 
-#main-menu-container {
+#menu-container {
     background-color: #5a5a66;
     border-radius: 10px;
 }
 AppNameLabel {
     font-size: 30px;
     font-weight: bold;
+    text-transform: uppercase;
 }
-MainMenuButton {
+MenuButton {
     background-color: #2a2b2e;
     border-radius: 4px;
     padding: 10px 50px;
 }
-MainMenuButton:hover {
+MenuButton:hover {
     background-color: #3a3b3e;
 }
-MainMenuButton#quit_button {
+MenuButton#red_button {
     background-color: #ff0000;
 }
-MainMenuButton#quit_button:hover {
+MenuButton#red_button:hover {
     background-color: #ff3333;
 }
-
-/* ======================================== */
-/* settings menu */
-
-
+MenuHeading {
+    font-size: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
 
 /* ======================================== */
 /*  */
