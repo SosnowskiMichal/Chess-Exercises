@@ -12,7 +12,7 @@ from .statistics_window import StatisticsWindow
 from .settings_menu import SettingsMenu
 from .ui_controller import UIController
 
-from models import Board
+from models import ChessBoard
 
 
 class Application(QApplication):
@@ -71,5 +71,5 @@ class MainWindow(QMainWindow):
         # self.central_widget.addWidget(self.statistics_window)
         # self.central_widget.addWidget(self.settings_menu)
 
-        self.board = Board()
+        self.board = ChessBoard()
         self.central_widget.addWidget(self.board)
