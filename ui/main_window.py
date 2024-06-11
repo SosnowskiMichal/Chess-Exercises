@@ -12,7 +12,7 @@ from .statistics_window import StatisticsWindow
 from .settings_menu import SettingsMenu
 from .ui_controller import UIController
 
-from models import ChessBoard
+from board import ChessBoard
 
 
 class Application(QApplication):
@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Chess Puzzles')
-        self.setContentsMargins(20, 20, 20, 20)
+        self.setContentsMargins(10, 10, 10, 10)
         self.setMinimumSize(1300, 800)
         
         # self.resize(1300, 800)

@@ -38,7 +38,7 @@ class ChessPiece(QLabel):
     #         drag.setHotSpot(event.position().toPoint() - self.rect().topLeft())
             
     #         drag.exec(Qt.DropAction.MoveAction)
-
+    
 
 class King(ChessPiece):
     def __init__(self, color: str, theme: str = 'dark_wood', parent: QWidget = None):

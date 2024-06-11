@@ -5,7 +5,7 @@ from typing import List, Iterator
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.orm.session import Session
 from sqlalchemy.engine import Engine
-from sqlalchemy import ForeignKey, create_engine, func, select
+from sqlalchemy import ForeignKey, create_engine, select, func
 
 
 class Base(DeclarativeBase):
@@ -20,6 +20,14 @@ class PuzzleInfo(Base):
     rating_deviation: Mapped[int]
     themes: Mapped[str]
 
+    def __repr__(self):
+        return (
+            f'<PuzzleInfo(puzzle_id={self.puzzle_id}, '
+            f'rating={self.rating}, '
+            f'rating_deviation={self.rating_deviation}, '
+            f'themes={self.themes})>'
+        )
+
 
 class PuzzleMoves(Base):
     __tablename__: str = 'puzzle_moves'
@@ -28,6 +36,13 @@ class PuzzleMoves(Base):
         ForeignKey('puzzle_info.puzzle_id'), primary_key=True)
     fen: Mapped[str]
     moves: Mapped[str]
+
+    def __repr__(self):
+        return (
+            f'<PuzzleMoves(puzzle_id={self.puzzle_id}, '
+            f'fen={self.fen}, '
+            f'moves={self.moves})>'
+        )
 
 
 class PuzzleManager:
@@ -47,6 +62,23 @@ class PuzzleManager:
             self.engine = None
         self.engine = create_engine(f'sqlite:///{self.db_path}')
         self.session = Session(self.engine)
+
+    def get_puzzle(self, rating: int = None, theme: str = None):
+        query = (
+            select(PuzzleInfo, PuzzleMoves)
+            .join(PuzzleMoves, PuzzleInfo.puzzle_id == PuzzleMoves.puzzle_id)
+        )
+        if rating is not None:
+            query = query.filter(
+                func.abs(PuzzleInfo.rating - rating) <= PuzzleInfo.rating_deviation
+            )
+        if theme is not None:
+            query = query.filter(PuzzleInfo.themes.contains(theme))
+        query = query.order_by(func.random()).limit(1)
+
+        puzzle = self.session.execute(query).one_or_none()
+        return puzzle
+
 
     # def create_database(self):
     #     Base.metadata.create_all(self.engine)
