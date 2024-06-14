@@ -87,6 +87,7 @@ class AppNameLabel(QLabel):
 class MenuButton(QPushButton):
     def __init__(self, text: str, name: str = None):
         super().__init__(text)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         if name:
             self.setObjectName(name)
 

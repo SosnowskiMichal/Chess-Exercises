@@ -2,7 +2,6 @@ import os
 
 from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 from PyQt6.QtGui import QFont, QFontDatabase
-from matplotlib import style
 
 from .main_menu import MainMenu
 from .practice_window import PracticeWindow

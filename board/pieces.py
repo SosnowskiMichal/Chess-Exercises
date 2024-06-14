@@ -1,76 +1,156 @@
 import os
 
-from PyQt6.QtWidgets import QLabel, QWidget, QSizePolicy
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QLabel, QWidget, QSizePolicy, QGraphicsColorizeEffect
+from PyQt6.QtGui import QPixmap, QDrag, QColor
+from PyQt6.QtCore import Qt, QMimeData
 
 
 class ChessPiece(QLabel):
-    def __init__(self, color: str, theme: str, parent: QWidget):
+    def __init__(
+        self,
+        square: str,
+        color: str,
+        theme: str,
+        is_active: bool,
+        parent: QWidget = None
+    ) -> None:
         super().__init__(parent)
+        self.square = square
         self.color = color
         self.theme = theme
+        self.is_active = is_active
         self.assets_dir = self.get_assets_dir(theme)
         self.initialize_piece()
 
-    def initialize_piece(self):
-        self.setMaximumSize(100, 100)
+    def initialize_piece(self) -> None:
+        self.setMaximumSize(90, 90)
         self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setScaledContents(True)
+        if self.is_active:
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
+        else:
+            self.setAcceptDrops(True)
 
-    def get_assets_dir(self, theme):
+    def get_assets_dir(self, theme: str) -> str:
         assets_dir = os.path.join(
             os.path.dirname(__file__), '..', 'assets', 'pieces', theme)
         return os.path.normpath(assets_dir)
 
-    # def mousePressEvent(self, event):
-    #     if event.button() == Qt.MouseButton.LeftButton:
-    #         self.drag_start_position = event.position().toPoint()
+    def __str__(self) -> str:
+        return f'{self.square} {self.color} {self.__class__.__name__}'
+    
+    def mousePressEvent(self, event) -> None:
+        if not self.is_active:
+            return
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            drag = QDrag(self)
+            mimeData = QMimeData()
+            drag.setMimeData(mimeData)
+            drag.setHotSpot(event.pos() - self.rect().topLeft())
+            # drag.setDragCursor(closed_hand_pixmap, Qt.DropAction.MoveAction)
+            drag.exec(Qt.DropAction.MoveAction)
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
 
-    # def mouseMoveEvent(self, event):
-    #     if event.buttons() & Qt.MouseButton.LeftButton:
-    #         drag = QDrag(self)
-    #         mime_data = QMimeData()
-            
-    #         drag.setMimeData(mime_data)
-    #         drag.setPixmap(self.pixmap())
-    #         drag.setHotSpot(event.position().toPoint() - self.rect().topLeft())
-            
-    #         drag.exec(Qt.DropAction.MoveAction)
+    def dragEnterEvent(self, event) -> None:
+        # TODO: rework coloring
+        widget = event.source()
+        if widget:
+            board = self.parentWidget()
+            if board.board_controller.validate_move(widget, self.square):
+                effect = QGraphicsColorizeEffect()
+                effect.setColor(QColor('red'))
+                self.setGraphicsEffect(effect)
+                event.accept()
+
+    def dragLeaveEvent(self, event) -> None:
+        self.setGraphicsEffect(None)
+        event.accept()
+
+    def dropEvent(self, event) -> None:
+        widget = event.source()
+        if widget:
+            board = self.parentWidget()
+            board.board_controller.handle_player_move(widget, square=self.square)
+            event.accept()
+        #     self.parentWidget().grid_layout.removeWidget(widget)
+        #     self.parentWidget().grid_layout.addWidget(widget, self.row, self.col)
     
 
 class King(ChessPiece):
-    def __init__(self, color: str, theme: str = 'dark_wood', parent: QWidget = None):
-        super().__init__(color, theme, parent)
+    def __init__(
+        self,
+        square: str,
+        color: str,
+        theme: str,
+        is_active: bool,
+        parent: QWidget = None
+    ) -> None:
+        super().__init__(square, color, theme, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'king-{color}.png')))
 
 
 class Queen(ChessPiece):
-    def __init__(self, color: str, theme: str = 'dark_wood', parent: QWidget = None):
-        super().__init__(color, theme, parent)
+    def __init__(
+        self,
+        square: str,
+        color: str,
+        theme: str,
+        is_active: bool,
+        parent: QWidget = None
+    ) -> None:
+        super().__init__(square, color, theme, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'queen-{color}.png')))
 
 
 class Rook(ChessPiece):
-    def __init__(self, color: str, theme: str = 'dark_wood', parent: QWidget = None):
-        super().__init__(color, theme, parent)
+    def __init__(
+        self,
+        square: str,
+        color: str,
+        theme: str,
+        is_active: bool,
+        parent: QWidget = None
+    ) -> None:
+        super().__init__(square, color, theme, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'rook-{color}.png')))
 
 
 class Bishop(ChessPiece):
-    def __init__(self, color: str, theme: str = 'dark_wood', parent: QWidget = None):
-        super().__init__(color, theme, parent)
+    def __init__(
+        self,
+        square: str,
+        color: str,
+        theme: str,
+        is_active: bool,
+        parent: QWidget = None
+    ) -> None:
+        super().__init__(square, color, theme, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'bishop-{color}.png')))
 
 
 class Knight(ChessPiece):
-    def __init__(self, color: str, theme: str = 'dark_wood', parent: QWidget = None):
-        super().__init__(color, theme, parent)
+    def __init__(
+        self,
+        square: str,
+        color: str,
+        theme: str,
+        is_active: bool,
+        parent: QWidget = None
+    ) -> None:
+        super().__init__(square, color, theme, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'knight-{color}.png')))
 
 
 class Pawn(ChessPiece):
-    def __init__(self, color: str, theme: str = 'dark_wood', parent: QWidget = None):
-        super().__init__(color, theme, parent)
+    def __init__(
+        self,
+        square: str,
+        color: str,
+        theme: str,
+        is_active: bool,
+        parent: QWidget = None
+    ) -> None:
+        super().__init__(square, color, theme, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'pawn-{color}.png')))
