@@ -1,5 +1,6 @@
 import os
 
+from typing import Tuple
 from PyQt6.QtWidgets import (
     QWidget, QGridLayout, QLabel, QDialog, QDialogButtonBox,
     QSizePolicy, QGraphicsColorizeEffect, QHBoxLayout
@@ -25,7 +26,7 @@ class ChessBoard(QWidget):
         # self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.initialize_layout()
         self.initialize_squares()
-        self.initialize_puzzle()
+        # self.initialize_puzzle()
 
     def get_assets_dir(self, theme: str) -> str:
         assets_dir = os.path.join(
@@ -45,8 +46,16 @@ class ChessBoard(QWidget):
                 self.grid_layout.addWidget(square, row, col)
 
     def initialize_puzzle(self, rating: int = None, theme: str = None) -> None:
+        self.clear_board()
         self.board_controller.initialize_puzzle(rating, theme)
-        
+
+    def get_current_puzzle_info(self) -> Tuple[int, str]:
+        return self.board_controller.get_current_puzzle_info()
+
+    def clear_board(self) -> None:
+        for widget in self.findChildren(ChessPiece):
+            widget.deleteLater()
+
 
 class ChessBoardSquare(QLabel):
     def __init__(self, row: int, col: int, board: ChessBoard = None) -> None:

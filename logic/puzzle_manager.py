@@ -79,6 +79,7 @@ class PuzzleManager:
         puzzle = self.session.execute(query).one_or_none()
         return puzzle
     
+    # TODO: remove later
     def get_puzzle_by_id(self, puzzle_id: str):
         query = (
             select(PuzzleInfo, PuzzleMoves)
@@ -87,7 +88,13 @@ class PuzzleManager:
         )
         puzzle = self.session.execute(query).one_or_none()
         return puzzle
+    
+    def get_puzzle_themes(self):
+        query = select(PuzzleInfo.themes).distinct()
+        themes = self.session.execute(query).scalars().all()
+        return themes
 
+    # TODO: create db of 100 000 puzzles
 
     # def create_database(self):
     #     Base.metadata.create_all(self.engine)

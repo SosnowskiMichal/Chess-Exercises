@@ -1,3 +1,4 @@
+from typing import Tuple
 from PyQt6.QtWidgets import (
     QWidget, QPushButton, QVBoxLayout, QGridLayout, QLabel, QComboBox, QLineEdit
 )
@@ -5,11 +6,11 @@ from PyQt6.QtCore import Qt
 
 
 class MainMenu(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.initialize_main_layout()
 
-    def initialize_main_layout(self):
+    def initialize_main_layout(self) -> None:
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.main_layout.setSpacing(20)
@@ -22,7 +23,7 @@ class MainMenu(QWidget):
         # self.main_layout.addWidget(self.user_selection_container)
         self.main_layout.addWidget(self.buttons_container)
 
-    def create_app_name_container(self):
+    def create_app_name_container(self) -> None:
         container = MainMenu.create_menu_container()
         self.app_name_container, self.app_name_container_layout = container
 
@@ -48,7 +49,7 @@ class MainMenu(QWidget):
     #     self.user_selection_container_layout.addWidget(self.creation_button, 2, 0, 1, 2)
     #     self.user_selection_container_layout.addWidget(self.warning_label, 3, 0, 1, 2)
 
-    def create_buttons_container(self):
+    def create_buttons_container(self) -> None:
         container = MainMenu.create_menu_container()
         self.buttons_container, self.buttons_container_layout = container
 
@@ -68,7 +69,7 @@ class MainMenu(QWidget):
         self.buttons_container_layout.addSpacing(20)
         self.buttons_container_layout.addWidget(self.quit_button)
 
-    def create_menu_container(grid: bool = False):
+    def create_menu_container(grid: bool = False) -> Tuple[QWidget, QGridLayout | QVBoxLayout]:
         container = QWidget()
         container.setObjectName('menu-container')
         container.setFixedWidth(500)
@@ -79,20 +80,20 @@ class MainMenu(QWidget):
 
 
 class AppNameLabel(QLabel):
-    def __init__(self, text: str):
+    def __init__(self, text: str = None) -> None:
         super().__init__(text)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
 
 class MenuButton(QPushButton):
-    def __init__(self, text: str, name: str = None):
+    def __init__(self, text: str = None, name: str = None) -> None:
         super().__init__(text)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         if name:
             self.setObjectName(name)
 
 class MenuHeading(QLabel):
-    def __init__(self, text: str):
+    def __init__(self, text: str = None, alignment: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignCenter) -> None:
         super().__init__(text)
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setAlignment(alignment)
         # self.setContentsMargins(0, 0, 0, 20)

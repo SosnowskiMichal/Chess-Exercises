@@ -15,18 +15,18 @@ from board import ChessBoard
 
 
 class Application(QApplication):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__([])
         self.load_fonts()
         self.load_stylesheet()
 
-    def load_stylesheet(self):
+    def load_stylesheet(self) -> None:
         stylesheet_path = os.path.normpath(os.path.join(
             os.path.dirname(__file__), '..', 'assets', 'styles', 'styles.css'))
         with open(stylesheet_path, 'r') as file:
             self.setStyleSheet(file.read())
     
-    def load_fonts(self):
+    def load_fonts(self) -> None:
         fonts_path = os.path.normpath(
             os.path.join(os.path.dirname(__file__), '..', 'assets', 'fonts'))
         for filename in os.listdir(fonts_path):
@@ -37,7 +37,7 @@ class Application(QApplication):
             
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle('Chess Puzzles')
         self.setContentsMargins(10, 10, 10, 10)
@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         self.initialize_central_widget()
         self.ui_controller = UIController(self)
 
-    def initialize_central_widget(self):
+    def initialize_central_widget(self) -> None:
         self.central_widget = QStackedWidget()
         self.setCentralWidget(self.central_widget)
 
@@ -63,12 +63,12 @@ class MainWindow(QMainWindow):
         self.statistics_window = StatisticsWindow()
         self.settings_menu = SettingsMenu()
 
-        # self.central_widget.addWidget(self.main_menu)
-        # self.central_widget.addWidget(self.practice_window)
-        # self.central_widget.addWidget(self.custom_practice_settings)
-        # self.central_widget.addWidget(self.time_modes_menu)
-        # self.central_widget.addWidget(self.statistics_window)
-        # self.central_widget.addWidget(self.settings_menu)
+        self.central_widget.addWidget(self.main_menu)
+        self.central_widget.addWidget(self.practice_window)
+        self.central_widget.addWidget(self.custom_practice_settings)
+        self.central_widget.addWidget(self.time_modes_menu)
+        self.central_widget.addWidget(self.statistics_window)
+        self.central_widget.addWidget(self.settings_menu)
 
-        self.board = ChessBoard()
-        self.central_widget.addWidget(self.board)
+        # self.board = ChessBoard()
+        # self.central_widget.addWidget(self.board)

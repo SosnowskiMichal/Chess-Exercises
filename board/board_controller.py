@@ -40,6 +40,9 @@ class BoardController:
         print(self.puzzle_info)
         print(self.puzzle_moves)
 
+    def get_current_puzzle_info(self) -> Tuple[int, str]:
+        return self.puzzle_info.rating, self.puzzle_info.themes
+
     def initialize_data(self) -> None:
         self.pieces = []
         self.is_board_active = True

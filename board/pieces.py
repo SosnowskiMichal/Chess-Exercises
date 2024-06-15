@@ -50,7 +50,6 @@ class ChessPiece(QLabel):
             drag.setMimeData(mimeData)
             drag.setHotSpot(event.pos() - self.rect().topLeft())
 
-            # TODO: rework cursor
             path = os.path.join(
                 os.path.dirname(__file__), '..', 'assets', 'other', 'closedhand.png')
             closed_hand_pixmap = QPixmap(path).scaled(15, 15)
