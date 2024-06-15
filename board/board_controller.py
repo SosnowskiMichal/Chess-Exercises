@@ -1,6 +1,6 @@
 import re
-import time
 import chess
+import threading
 
 from typing import Dict, List, Tuple, Optional
 from PyQt6.QtWidgets import QWidget
@@ -19,8 +19,7 @@ class BoardController:
         self.get_puzzle_data(rating, theme)
         self.initialize_data()
         self.setup_board()
-        # time.sleep(1)
-        self.make_next_computer_move()
+        threading.Timer(1, self.make_next_computer_move).start()
         print(self.legal_moves)
 
     def clear_data(self) -> None:
@@ -75,7 +74,9 @@ class BoardController:
                     self.board.grid_layout.addWidget(piece, curr_row, curr_col)
                     col += 1
 
-    def create_piece(self, char: str, square: str, theme: str, parent: QWidget = None) -> ChessPiece:
+    def create_piece(
+        self, char: str, square: str, theme: str, parent: QWidget = None
+    ) -> ChessPiece:
         color = 'white' if char.isupper() else 'black'
         is_active = color[0] == self.player_color
         if char in 'Kk':
@@ -96,18 +97,18 @@ class BoardController:
         return [move.uci() for move in generator]
     
     def handle_player_move(
-            self, piece: ChessPiece, row: int = None, col: int = None, square: str = None
-        ) -> None:
-        # TODO: implement (now for testing only)
+        self, piece: ChessPiece, row: int = None, col: int = None, square: str = None
+    ) -> None:
         target_square = square if square is not None else self.get_board_square_name(row, col)
-        if self.validate_move(piece, target_square):
-            if self.validate_capture(piece, target_square):
-                print(f'Player capture at {target_square}')
-            else:
-                print(f'Player move to {target_square}')
-            if self.validate_puzzle_move(piece, target_square):
-                print(f'Correct move! {target_square}')
-        pass
+        if self.validate_puzzle_move(piece, target_square):
+            self.current_move += 1
+            move = f'{piece.square}{target_square}'
+            self.move_piece_on_board(piece, target_square)
+            self.board_controller.push(chess.Move.from_uci(move))
+            is_piece_captured, target_piece = self.validate_capture(piece, target_square)
+            if is_piece_captured:
+                self.capture_piece(target_piece)
+            threading.Timer(1, self.make_next_computer_move).start()
 
     def validate_move(self, piece: ChessPiece, target_square: str) -> bool:
         move = f'{piece.square}{target_square}'
@@ -118,29 +119,29 @@ class BoardController:
         move = f'{piece.square}{target_square}'
         return move == expected_move
 
-    def validate_capture(self, piece: ChessPiece, target_square: str) -> bool:
+    def validate_capture(self, piece: ChessPiece, target_square: str) -> Tuple[bool, ChessPiece]:
         piece_color = piece.color
         for other_piece in self.pieces:
             if other_piece.square == target_square and other_piece.color != piece_color:
-                return True
-        return False
+                return True, other_piece
+        return False, None
     
-    def capture_piece(self, target_square: str) -> None:
-        for piece in self.pieces:
-            if piece.square == target_square:
-                self.pieces.remove(piece)
-                self.board.grid_layout.removeWidget(piece)
-                break
+    def capture_piece(self, piece: ChessPiece) -> None:
+        self.pieces.remove(piece)
+        self.board.grid_layout.removeWidget(piece)
 
     def make_next_computer_move(self) -> None:
-        if self.current_move < len(self.moves):
+        if self.current_move >= len(self.moves):
+            self.complete_puzzle()
+        else:
             move = self.moves[self.current_move]
             piece = self.get_piece_at(move[:2])
-            if self.validate_capture(piece, move[2:]):
-                self.capture_piece(move[2:])
+            is_piece_captured, target_piece = self.validate_capture(piece, move[2:])
+            if is_piece_captured:
+                self.capture_piece(target_piece)
             self.move_piece_on_board(piece, move[2:])
-            self.current_move += 1
             self.board_controller.push(chess.Move.from_uci(move))
+            self.current_move += 1
             self.legal_moves = self.generate_legal_moves()
 
     def get_piece_at(self, square: str) -> Optional[ChessPiece]:
@@ -150,6 +151,7 @@ class BoardController:
         return None
     
     def move_piece_on_board(self, piece: ChessPiece, target_square: str) -> None:
+        # TODO: check for promotion and handle it
         target_indexes = self.get_board_square_indexes(target_square)
         self.board.grid_layout.removeWidget(piece)
         self.board.grid_layout.addWidget(piece, *target_indexes)

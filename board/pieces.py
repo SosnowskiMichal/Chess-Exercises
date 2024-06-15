@@ -49,7 +49,13 @@ class ChessPiece(QLabel):
             mimeData = QMimeData()
             drag.setMimeData(mimeData)
             drag.setHotSpot(event.pos() - self.rect().topLeft())
-            # drag.setDragCursor(closed_hand_pixmap, Qt.DropAction.MoveAction)
+
+            # TODO: rework cursor
+            path = os.path.join(
+                os.path.dirname(__file__), '..', 'assets', 'other', 'closedhand.png')
+            closed_hand_pixmap = QPixmap(path).scaled(15, 15)
+            drag.setDragCursor(closed_hand_pixmap, Qt.DropAction.MoveAction)
+
             drag.exec(Qt.DropAction.MoveAction)
             self.setCursor(Qt.CursorShape.OpenHandCursor)
 
@@ -74,8 +80,6 @@ class ChessPiece(QLabel):
             board = self.parentWidget()
             board.board_controller.handle_player_move(widget, square=self.square)
             event.accept()
-        #     self.parentWidget().grid_layout.removeWidget(widget)
-        #     self.parentWidget().grid_layout.addWidget(widget, self.row, self.col)
     
 
 class King(ChessPiece):

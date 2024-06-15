@@ -63,12 +63,10 @@ class ChessBoardSquare(QLabel):
         self.setScaledContents(True)
         assets_dir = self.board.assets_dir
         if (self.row + self.col) % 2 == 0:
-            background_image = QPixmap(
-                os.path.join(assets_dir, 'white.png'))
+            background_image = QPixmap(os.path.join(assets_dir, 'white.png'))
             self.setPixmap(background_image)
         else:
-            background_image = QPixmap(
-                os.path.join(assets_dir, 'black.png'))
+            background_image = QPixmap(os.path.join(assets_dir, 'black.png'))
             self.setPixmap(background_image)
 
     def dragEnterEvent(self, event) -> None:
@@ -93,5 +91,3 @@ class ChessBoardSquare(QLabel):
             board: ChessBoard = self.parentWidget()
             board.board_controller.handle_player_move(widget, row=self.row, col=self.col)
             event.accept()
-            # self.parentWidget().grid_layout.removeWidget(widget)
-            # self.parentWidget().grid_layout.addWidget(widget, self.row, self.col)
