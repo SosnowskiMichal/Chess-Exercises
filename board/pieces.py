@@ -41,7 +41,7 @@ class ChessPiece(QLabel):
         return f'{self.square} {self.color} {self.__class__.__name__}'
     
     def mousePressEvent(self, event) -> None:
-        if not self.is_active:
+        if not self.is_active or not self.parentWidget().board_controller.is_board_active:
             return
         if event.button() == Qt.MouseButton.LeftButton:
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
@@ -75,6 +75,7 @@ class ChessPiece(QLabel):
         event.accept()
 
     def dropEvent(self, event) -> None:
+        self.setGraphicsEffect(None)
         widget = event.source()
         if widget:
             board = self.parentWidget()

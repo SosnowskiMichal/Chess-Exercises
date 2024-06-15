@@ -78,6 +78,15 @@ class PuzzleManager:
 
         puzzle = self.session.execute(query).one_or_none()
         return puzzle
+    
+    def get_puzzle_by_id(self, puzzle_id: str):
+        query = (
+            select(PuzzleInfo, PuzzleMoves)
+            .join(PuzzleMoves, PuzzleInfo.puzzle_id == PuzzleMoves.puzzle_id)
+            .filter(PuzzleInfo.puzzle_id == puzzle_id)
+        )
+        puzzle = self.session.execute(query).one_or_none()
+        return puzzle
 
 
     # def create_database(self):

@@ -1,6 +1,9 @@
 import os
 
-from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QSizePolicy, QGraphicsColorizeEffect
+from PyQt6.QtWidgets import (
+    QWidget, QGridLayout, QLabel, QDialog, QDialogButtonBox,
+    QSizePolicy, QGraphicsColorizeEffect, QHBoxLayout
+)
 from PyQt6.QtGui import QPixmap, QColor
 from PyQt6.QtCore import Qt
 
@@ -86,6 +89,7 @@ class ChessBoardSquare(QLabel):
         event.accept()
 
     def dropEvent(self, event) -> None:
+        self.setGraphicsEffect(None)
         widget = event.source()
         if widget:
             board: ChessBoard = self.parentWidget()
