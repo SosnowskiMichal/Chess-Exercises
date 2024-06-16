@@ -6,12 +6,9 @@ from PyQt6.QtGui import QFont, QFontDatabase
 from .main_menu import MainMenu
 from .practice_window import PracticeWindow
 from .custom_practice_settings import CustomPracticeSettings
-from .time_modes_menu import TimeModesMenu
 from .statistics_window import StatisticsWindow
 from .settings_menu import SettingsMenu
 from .ui_controller import UIController
-
-from board import ChessBoard
 
 
 class Application(QApplication):
@@ -41,7 +38,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle('Chess Puzzles')
         self.setContentsMargins(10, 10, 10, 10)
-        self.setMinimumSize(1300, 800)
+        self.setMinimumSize(1400, 800)
         
         # self.resize(1300, 800)
         # self.showMaximized()
@@ -59,16 +56,11 @@ class MainWindow(QMainWindow):
         self.main_menu = MainMenu()
         self.practice_window = PracticeWindow()
         self.custom_practice_settings = CustomPracticeSettings()
-        self.time_modes_menu = TimeModesMenu()
         self.statistics_window = StatisticsWindow()
         self.settings_menu = SettingsMenu()
 
         self.central_widget.addWidget(self.main_menu)
         self.central_widget.addWidget(self.practice_window)
         self.central_widget.addWidget(self.custom_practice_settings)
-        self.central_widget.addWidget(self.time_modes_menu)
         self.central_widget.addWidget(self.statistics_window)
         self.central_widget.addWidget(self.settings_menu)
-
-        # self.board = ChessBoard()
-        # self.central_widget.addWidget(self.board)

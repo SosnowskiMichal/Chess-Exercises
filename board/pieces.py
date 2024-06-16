@@ -10,16 +10,16 @@ class ChessPiece(QLabel):
         self,
         square: str,
         color: str,
-        theme: str,
+        piece_style: str,
         is_active: bool,
         parent: QWidget = None
     ) -> None:
         super().__init__(parent)
         self.square = square
         self.color = color
-        self.theme = theme
+        self.piece_style = piece_style
         self.is_active = is_active
-        self.assets_dir = self.get_assets_dir(theme)
+        self.assets_dir = self.get_assets_dir(piece_style)
         self.initialize_piece()
 
     def initialize_piece(self) -> None:
@@ -32,9 +32,9 @@ class ChessPiece(QLabel):
         else:
             self.setAcceptDrops(True)
 
-    def get_assets_dir(self, theme: str) -> str:
+    def get_assets_dir(self, piece_style: str) -> str:
         assets_dir = os.path.join(
-            os.path.dirname(__file__), '..', 'assets', 'pieces', theme)
+            os.path.dirname(__file__), '..', 'assets', 'pieces', piece_style)
         return os.path.normpath(assets_dir)
 
     def __str__(self) -> str:
@@ -87,11 +87,11 @@ class King(ChessPiece):
         self,
         square: str,
         color: str,
-        theme: str,
+        piece_style: str,
         is_active: bool,
         parent: QWidget = None
     ) -> None:
-        super().__init__(square, color, theme, is_active, parent)
+        super().__init__(square, color, piece_style, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'king-{color}.png')))
 
 
@@ -100,11 +100,11 @@ class Queen(ChessPiece):
         self,
         square: str,
         color: str,
-        theme: str,
+        piece_style: str,
         is_active: bool,
         parent: QWidget = None
     ) -> None:
-        super().__init__(square, color, theme, is_active, parent)
+        super().__init__(square, color, piece_style, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'queen-{color}.png')))
 
 
@@ -113,11 +113,11 @@ class Rook(ChessPiece):
         self,
         square: str,
         color: str,
-        theme: str,
+        piece_style: str,
         is_active: bool,
         parent: QWidget = None
     ) -> None:
-        super().__init__(square, color, theme, is_active, parent)
+        super().__init__(square, color, piece_style, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'rook-{color}.png')))
 
 
@@ -126,11 +126,11 @@ class Bishop(ChessPiece):
         self,
         square: str,
         color: str,
-        theme: str,
+        piece_style: str,
         is_active: bool,
         parent: QWidget = None
     ) -> None:
-        super().__init__(square, color, theme, is_active, parent)
+        super().__init__(square, color, piece_style, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'bishop-{color}.png')))
 
 
@@ -139,11 +139,11 @@ class Knight(ChessPiece):
         self,
         square: str,
         color: str,
-        theme: str,
+        piece_style: str,
         is_active: bool,
         parent: QWidget = None
     ) -> None:
-        super().__init__(square, color, theme, is_active, parent)
+        super().__init__(square, color, piece_style, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'knight-{color}.png')))
 
 
@@ -152,9 +152,9 @@ class Pawn(ChessPiece):
         self,
         square: str,
         color: str,
-        theme: str,
+        piece_style: str,
         is_active: bool,
         parent: QWidget = None
     ) -> None:
-        super().__init__(square, color, theme, is_active, parent)
+        super().__init__(square, color, piece_style, is_active, parent)
         self.setPixmap(QPixmap(os.path.join(self.assets_dir, f'pawn-{color}.png')))

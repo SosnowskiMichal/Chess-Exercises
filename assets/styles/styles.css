@@ -1,41 +1,42 @@
-/* ======================================== */
-/* main window */
-
 MainWindow {
     background-color: #2a2b2e;
 }
-
-/* ======================================== */
-/* menu widgets */
 
 #menu-container {
     background-color: #5a5a66;
     border-radius: 10px;
 }
+
 AppNameLabel {
     font-size: 30px;
     font-weight: bold;
     text-transform: uppercase;
 }
+
 MenuButton {
     background-color: #2a2b2e;
     border-radius: 4px;
     padding: 10px 50px;
 }
+
 MenuButton:hover {
     background-color: #3a3b3e;
 }
+
 MenuButton#red_button {
     background-color: #ff0000;
 }
+
 MenuButton#red_button:hover {
     background-color: #ff3333;
 }
+
 MenuHeading {
     font-size: 20px;
     font-weight: bold;
     text-transform: uppercase;
 }
 
-/* ======================================== */
-/*  */
+ThemeSelector {
+    padding: 0 10px;
+}

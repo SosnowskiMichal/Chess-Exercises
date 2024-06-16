@@ -55,14 +55,12 @@ class MainMenu(QWidget):
 
         self.free_practice_button = MenuButton('Free Practice')
         self.custom_practice_button = MenuButton('Custom Practice')
-        self.time_modes_button = MenuButton('Time Modes')
         self.settings_button = MenuButton('Settings')
         self.statistics_button = MenuButton('Statistics')
         self.quit_button = MenuButton('Quit', 'red_button')
 
         self.buttons_container_layout.addWidget(self.free_practice_button)
         self.buttons_container_layout.addWidget(self.custom_practice_button)
-        self.buttons_container_layout.addWidget(self.time_modes_button)
         self.buttons_container_layout.addSpacing(20)
         self.buttons_container_layout.addWidget(self.statistics_button)
         self.buttons_container_layout.addWidget(self.settings_button)
@@ -72,7 +70,7 @@ class MainMenu(QWidget):
     def create_menu_container(grid: bool = False) -> Tuple[QWidget, QGridLayout | QVBoxLayout]:
         container = QWidget()
         container.setObjectName('menu-container')
-        container.setFixedWidth(500)
+        container.setFixedWidth(550)
         container.setContentsMargins(20, 20, 20, 20)
         container_layout = QGridLayout(container) if grid else QVBoxLayout(container)
         container_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -93,7 +91,8 @@ class MenuButton(QPushButton):
             self.setObjectName(name)
 
 class MenuHeading(QLabel):
-    def __init__(self, text: str = None, alignment: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignCenter) -> None:
+    def __init__(
+        self, text: str = None, alignment: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignCenter
+    ) -> None:
         super().__init__(text)
         self.setAlignment(alignment)
-        # self.setContentsMargins(0, 0, 0, 20)

@@ -1,48 +1,58 @@
 import re
 import chess
-import threading
 
 from typing import Dict, List, Tuple, Optional
-from PyQt6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QHBoxLayout, QPushButton
-from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QHBoxLayout
 from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtGui import QIcon
 
 from .pieces import *
-from logic import PuzzleManager
+from data_managers import PuzzleManager
 
 
 class BoardController:
     def __init__(self, board) -> None:
         self.board = board
         self.puzzle_manager = PuzzleManager()
+        self.rating = (None, None)
+        self.theme = None
 
-    def initialize_puzzle(self, rating: int = None, theme: str = None) -> None:
-        # self.clear_data()
-        self.get_puzzle_data(rating, theme)
+    def set_puzzle_filters(
+        self, min_rating: int = None, max_rating: int = None, theme: str = None
+    ) -> None:
+        if (min_rating, max_rating) != self.puzzle_manager.get_rating_range():
+            self.rating = (min_rating, max_rating)
+        else:
+            self.rating = (None, None)
+        self.theme = theme
+    
+    def clear_puzzle_filters(self) -> None:
+        self.rating = (None, None)
+        self.theme = None
+
+    def initialize_puzzle(self) -> None:
+        self.get_puzzle_data(*self.rating, self.theme)
+        if self.puzzle_info is None or self.puzzle_moves is None:
+            self.board.update_status(-1)
+            return
+        if len(self.puzzle_moves.moves.split()[0]) == 5:
+            print('FOUND')
+            self.board.update_status(-1)
+            return
         self.initialize_data()
         self.setup_board()
-        # threading.Timer(1, self.make_next_computer_move).start()
         self.make_next_computer_move()
         self.board.update_status(0)
 
-    def clear_data(self) -> None:
-        # TODO: probably remove later
-        self.puzzle_info = None
-        self.puzzle_moves = None
-        self.parsed_fen = None
-        self.player_color = None
-        self.moves = None
-        self.current_move = None
-
-    def get_puzzle_data(self, rating: int = None, theme: str = None) -> None:
-        result = self.puzzle_manager.get_puzzle(rating, theme)
-        # result = self.puzzle_manager.get_puzzle_by_id('007fJ')
+    def get_puzzle_data(
+        self, min_rating: int = None, max_rating: int = None, theme: str = None
+    ) -> None:
+        result = self.puzzle_manager.get_puzzle(min_rating, max_rating, theme)
         self.puzzle_info, self.puzzle_moves = result if result else (None, None)
-        # TODO: remove later
-        print(self.puzzle_info)
-        print(self.puzzle_moves)
 
     def get_current_puzzle_info(self) -> Tuple[int, str]:
+        if self.puzzle_info is None or self.puzzle_moves is None:
+            return None, None
         return self.puzzle_info.rating, self.puzzle_info.themes
 
     def initialize_data(self) -> None:
@@ -79,28 +89,29 @@ class BoardController:
                     curr_row = row if self.player_color == 'w' else 7 - row
                     curr_col = col if self.player_color == 'w' else 7 - col
                     square = f'{chr(col + ord('a'))}{8 - row}'
-                    piece = self.create_piece(char, square, self.board.theme, self.board)
+                    piece = self.create_piece(
+                        char, square, self.board.piece_style, self.board)
                     self.pieces.append(piece)
                     self.board.grid_layout.addWidget(piece, curr_row, curr_col)
                     col += 1
 
     def create_piece(
-        self, char: str, square: str, theme: str, parent: QWidget = None
+        self, char: str, square: str, piece_style: str, parent: QWidget = None
     ) -> ChessPiece:
         color = 'white' if char.isupper() else 'black'
         is_active = color[0] == self.player_color
         if char in 'Kk':
-            return King(square, color, theme, is_active, parent)
+            return King(square, color, piece_style, is_active, parent)
         elif char in 'Qq':
-            return Queen(square, color, theme, is_active, parent)
+            return Queen(square, color, piece_style, is_active, parent)
         elif char in 'Rr':
-            return Rook(square, color, theme, is_active, parent)
+            return Rook(square, color, piece_style, is_active, parent)
         elif char in 'Bb':
-            return Bishop(square, color, theme, is_active, parent)
+            return Bishop(square, color, piece_style, is_active, parent)
         elif char in 'Nn':
-            return Knight(square, color, theme, is_active, parent)
+            return Knight(square, color, piece_style, is_active, parent)
         elif char in 'Pp':
-            return Pawn(square, color, theme, is_active, parent)
+            return Pawn(square, color, piece_style, is_active, parent)
         
     def generate_legal_moves(self) -> List[str]:
         generator = self.board_controller.generate_legal_moves()
@@ -111,21 +122,21 @@ class BoardController:
     ) -> None:
         if not self.is_board_active:
             return
-        target_square = square if square is not None else self.get_board_square_name(row, col)
+        target_square = (
+            square if square is not None else self.get_board_square_name(row, col)
+        )
         if self.check_for_promotion(piece, target_square):
-            promotion_piece = self.select_promotion_piece(piece.color, piece.theme)
+            promotion_piece = self.select_promotion_piece(piece.color, piece.piece_style)
             target_square_with_promotion = f'{target_square}{promotion_piece}'
             if self.validate_puzzle_move(piece, target_square_with_promotion):
                 self.handle_promotion_move(piece, target_square, promotion_piece)
                 self.signal_correct_move()
-                # threading.Timer(1, self.make_next_computer_move).start()
                 self.make_next_computer_move()
             else:
                 self.signal_incorrect_move()
         elif self.validate_puzzle_move(piece, target_square):
             self.handle_standard_move(piece, target_square)
             self.signal_correct_move()
-            # threading.Timer(1, self.make_next_computer_move).start()
             self.make_next_computer_move()
         else:
             self.signal_incorrect_move()
@@ -139,25 +150,31 @@ class BoardController:
         if is_piece_captured:
             self.capture_piece(target_piece)
 
-    def handle_promotion_move(self, piece: ChessPiece, target_square: str, promotion_piece: str) -> None:
+    def handle_promotion_move(
+        self, piece: ChessPiece, target_square: str, promotion_piece: str
+    ) -> None:
         self.current_move += 1
         move = f'{piece.square}{target_square}{promotion_piece}'
         self.board_controller.push(chess.Move.from_uci(move))
-        promotion_piece = promotion_piece.upper() if piece.color == 'white' else promotion_piece
-        pr_piece = self.create_piece(promotion_piece, target_square, self.board.theme, self.board)
+        promotion_piece = (
+            promotion_piece.upper() if piece.color == 'white' else promotion_piece
+        )
+        pr_piece = self.create_piece(
+            promotion_piece, target_square, self.board.board_style, self.board
+        )
         self.pieces.append(pr_piece)
         self.capture_piece(piece)
-        self.board.grid_layout.addWidget(pr_piece, *self.get_board_square_indexes(target_square))
+        self.board.grid_layout.addWidget(
+            pr_piece, *self.get_board_square_indexes(target_square)
+        )
         is_piece_captured, target_piece = self.validate_capture(pr_piece, target_square)
         if is_piece_captured:
             self.capture_piece(target_piece)
-        print(f'Promotion to {target_square}!')
 
-    def select_promotion_piece(self, color: str, theme: str) -> Optional[str]:
-        dialog = PromotionChoiceWindow(color, theme)
+    def select_promotion_piece(self, color: str, piece_style: str) -> Optional[str]:
+        dialog = PromotionChoiceWindow(color, piece_style)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             promotion_piece = dialog.result
-            print(f'Button {dialog.result} clicked')
             return promotion_piece
         return None
 
@@ -174,7 +191,9 @@ class BoardController:
         move = f'{piece.square}{target_square}'
         return move == expected_move
 
-    def validate_capture(self, piece: ChessPiece, target_square: str) -> Tuple[bool, ChessPiece]:
+    def validate_capture(
+        self, piece: ChessPiece, target_square: str
+    ) -> Tuple[bool, ChessPiece]:
         piece_color = piece.color
         for other_piece in self.pieces:
             if other_piece.square == target_square and other_piece.color != piece_color:
@@ -196,7 +215,6 @@ class BoardController:
             else:
                 self.handle_promotion_move(piece, move[2:4], move[4])
             self.legal_moves = self.generate_legal_moves()
-            print(self.legal_moves)
     
     def move_piece(self, piece: ChessPiece, target_square: str) -> None:
         is_castling, castling_side = self.check_for_castling(piece, target_square)
@@ -207,7 +225,9 @@ class BoardController:
         self.board.grid_layout.addWidget(piece, *target_indexes)
         piece.square = target_square
 
-    def check_for_castling(self, piece: ChessPiece, target_square: str) -> Tuple[bool, str]:
+    def check_for_castling(
+        self, piece: ChessPiece, target_square: str
+    ) -> Tuple[bool, str]:
         move = f'{piece.square}{target_square}'
         if move in ('e1c1', 'e1g1', 'e8c8', 'e8g8'):
             return True, 'kingside' if move[2] == 'g' else 'queenside'
@@ -257,26 +277,23 @@ class BoardController:
         return f'{col_name}{row_num}'
     
     def signal_correct_move(self) -> None:
-        print('Correct move!')
         self.board.update_status(1)
 
     def signal_incorrect_move(self) -> None:
-        print('Incorrect move!')
         self.was_incorrect_move = True
         self.board.update_status(2)
 
     def signal_complete_puzzle(self) -> None:
-        print('Puzzle completed!')
         self.is_board_active = False
         status = 3 if self.was_incorrect_move else 4
         self.board.update_status(status)
 
 
 class PromotionChoiceWindow(QDialog):
-    def __init__(self, color: str, theme: str) -> None:
+    def __init__(self, color: str, piece_style: str) -> None:
         super().__init__()
         self.color = color
-        self.theme = theme
+        self.piece_style = piece_style
         self.setWindowTitle('Promotion')
         self.set_assets_dir()
         self.initialize_layout()
@@ -285,7 +302,7 @@ class PromotionChoiceWindow(QDialog):
     
     def set_assets_dir(self) -> None:
         self.assets_dir = os.path.normpath(os.path.join(
-            os.path.dirname(__file__), '..', 'assets', 'pieces', self.theme))
+            os.path.dirname(__file__), '..', 'assets', 'pieces', self.piece_style))
 
     def initialize_layout(self) -> None:
         self.main_layout = QHBoxLayout(self)
@@ -294,24 +311,40 @@ class PromotionChoiceWindow(QDialog):
         self.main_layout.addWidget(self.button_box)
 
     def initialize_promotion_choices(self) -> None:
-        self.queen_button = self.button_box.addButton('', QDialogButtonBox.ButtonRole.AcceptRole)
+        self.queen_button = self.button_box.addButton(
+            '', QDialogButtonBox.ButtonRole.AcceptRole
+        )
         self.queen_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.queen_button.setIcon(QIcon(os.path.join(self.assets_dir, f'queen-{self.color}.png')))
+        self.queen_button.setIcon(
+            QIcon(os.path.join(self.assets_dir, f'queen-{self.color}.png'))
+        )
         self.queen_button.setIconSize(QSize(90, 90))
 
-        self.rook_button = self.button_box.addButton('', QDialogButtonBox.ButtonRole.AcceptRole)
+        self.rook_button = self.button_box.addButton(
+            '', QDialogButtonBox.ButtonRole.AcceptRole
+        )
         self.rook_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.rook_button.setIcon(QIcon(os.path.join(self.assets_dir, f'rook-{self.color}.png')))
+        self.rook_button.setIcon(
+            QIcon(os.path.join(self.assets_dir, f'rook-{self.color}.png'))
+        )
         self.rook_button.setIconSize(QSize(90, 90))
 
-        self.bishop_button = self.button_box.addButton('', QDialogButtonBox.ButtonRole.AcceptRole)
+        self.bishop_button = self.button_box.addButton(
+            '', QDialogButtonBox.ButtonRole.AcceptRole
+        )
         self.bishop_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.bishop_button.setIcon(QIcon(os.path.join(self.assets_dir, f'bishop-{self.color}.png')))
+        self.bishop_button.setIcon(
+            QIcon(os.path.join(self.assets_dir, f'bishop-{self.color}.png'))
+        )
         self.bishop_button.setIconSize(QSize(90, 90))
 
-        self.knight_button = self.button_box.addButton('', QDialogButtonBox.ButtonRole.AcceptRole)
+        self.knight_button = self.button_box.addButton(
+            '', QDialogButtonBox.ButtonRole.AcceptRole
+        )
         self.knight_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.knight_button.setIcon(QIcon(os.path.join(self.assets_dir, f'knight-{self.color}.png')))
+        self.knight_button.setIcon(
+            QIcon(os.path.join(self.assets_dir, f'knight-{self.color}.png'))
+        )
         self.knight_button.setIconSize(QSize(90, 90))
 
     def connect_signals(self) -> None:
