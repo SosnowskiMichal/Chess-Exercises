@@ -2,7 +2,7 @@ import re
 
 from PyQt6.QtWidgets import QStackedWidget
 
-from logic import DataManager, PuzzleManager
+from logic import DataManager
 
 
 class UIController:
@@ -31,6 +31,7 @@ class UIController:
         practice_window = self.main_window.practice_window
         practice_window.new_puzzle_button.clicked.connect(self.initialize_puzzle)
         practice_window.return_button.clicked.connect(self.close_practice_window)
+        practice_window.board_widget.board_status_signal.connect(self.update_board_status)
 
     def show_main_menu(self) -> None:
         widget = self.main_window.main_menu
@@ -71,6 +72,20 @@ class UIController:
             theme = ' '.join(word.capitalize() for word in theme.split())
             result.append(theme)
         return '\n'.join(result)
+    
+    def update_board_status(self, status: int) -> None:
+        practice_window = self.main_window.practice_window
+        if status == 0:
+            status_text = 'Make a move!'
+        elif status == 1:
+            status_text = 'Correct move!'
+        elif status == 2:
+            status_text = 'Incorrect move\nTry again'
+        elif status == 3:
+            status_text = 'Puzzle solved!'
+        elif status == 4:
+            status_text = 'Puzzle solved on the first try!'
+        practice_window.status_label.setText(status_text)
 
     def close_practice_window(self) -> None:
         practice_window = self.main_window.practice_window

@@ -1,12 +1,9 @@
 import os
 
 from typing import Tuple
-from PyQt6.QtWidgets import (
-    QWidget, QGridLayout, QLabel, QDialog, QDialogButtonBox,
-    QSizePolicy, QGraphicsColorizeEffect, QHBoxLayout
-)
+from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QSizePolicy, QGraphicsColorizeEffect
 from PyQt6.QtGui import QPixmap, QColor
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 
 from .pieces import *
 from .board_controller import BoardController
@@ -19,6 +16,8 @@ class ChessBoard(QWidget):
         self.assets_dir = self.get_assets_dir(self.theme)
         self.board_controller = BoardController(self)
         self.initialize_board()
+
+    board_status_signal = pyqtSignal(int)
 
     def initialize_board(self) -> None:
         self.setAcceptDrops(True)
@@ -55,6 +54,9 @@ class ChessBoard(QWidget):
     def clear_board(self) -> None:
         for widget in self.findChildren(ChessPiece):
             widget.deleteLater()
+
+    def update_status(self, status: int) -> None:
+        self.board_status_signal.emit(status)
 
 
 class ChessBoardSquare(QLabel):

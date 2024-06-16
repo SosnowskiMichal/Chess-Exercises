@@ -3,7 +3,7 @@ import chess
 import threading
 
 from typing import Dict, List, Tuple, Optional
-from PyQt6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QHBoxLayout, QPushButton
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QSize, Qt
 
@@ -15,16 +15,18 @@ class BoardController:
     def __init__(self, board) -> None:
         self.board = board
         self.puzzle_manager = PuzzleManager()
-    
+
     def initialize_puzzle(self, rating: int = None, theme: str = None) -> None:
-        self.clear_data()
+        # self.clear_data()
         self.get_puzzle_data(rating, theme)
         self.initialize_data()
         self.setup_board()
         # threading.Timer(1, self.make_next_computer_move).start()
         self.make_next_computer_move()
+        self.board.update_status(0)
 
     def clear_data(self) -> None:
+        # TODO: probably remove later
         self.puzzle_info = None
         self.puzzle_moves = None
         self.parsed_fen = None
@@ -46,6 +48,7 @@ class BoardController:
     def initialize_data(self) -> None:
         self.pieces = []
         self.is_board_active = True
+        self.was_incorrect_move = False
         self.board_controller = chess.Board(self.puzzle_moves.fen)
         self.legal_moves = self.generate_legal_moves()
         self.parsed_fen = self.parse_fen(self.puzzle_moves.fen)
@@ -114,12 +117,14 @@ class BoardController:
             target_square_with_promotion = f'{target_square}{promotion_piece}'
             if self.validate_puzzle_move(piece, target_square_with_promotion):
                 self.handle_promotion_move(piece, target_square, promotion_piece)
+                self.signal_correct_move()
                 # threading.Timer(1, self.make_next_computer_move).start()
                 self.make_next_computer_move()
             else:
                 self.signal_incorrect_move()
         elif self.validate_puzzle_move(piece, target_square):
             self.handle_standard_move(piece, target_square)
+            self.signal_correct_move()
             # threading.Timer(1, self.make_next_computer_move).start()
             self.make_next_computer_move()
         else:
@@ -133,7 +138,6 @@ class BoardController:
         is_piece_captured, target_piece = self.validate_capture(piece, target_square)
         if is_piece_captured:
             self.capture_piece(target_piece)
-        self.signal_correct_move()
 
     def handle_promotion_move(self, piece: ChessPiece, target_square: str, promotion_piece: str) -> None:
         self.current_move += 1
@@ -144,11 +148,9 @@ class BoardController:
         self.pieces.append(pr_piece)
         self.capture_piece(piece)
         self.board.grid_layout.addWidget(pr_piece, *self.get_board_square_indexes(target_square))
-        # check if piece is captured
         is_piece_captured, target_piece = self.validate_capture(pr_piece, target_square)
         if is_piece_captured:
             self.capture_piece(target_piece)
-        self.signal_correct_move()
         print(f'Promotion to {target_square}!')
 
     def select_promotion_piece(self, color: str, theme: str) -> Optional[str]:
@@ -185,7 +187,7 @@ class BoardController:
 
     def make_next_computer_move(self) -> None:
         if self.current_move >= len(self.moves):
-            self.complete_puzzle()
+            self.signal_complete_puzzle()
         else:
             move = self.moves[self.current_move]
             piece = self.get_piece_at(move[:2])
@@ -256,16 +258,18 @@ class BoardController:
     
     def signal_correct_move(self) -> None:
         print('Correct move!')
+        self.board.update_status(1)
 
     def signal_incorrect_move(self) -> None:
         print('Incorrect move!')
+        self.was_incorrect_move = True
+        self.board.update_status(2)
 
-    def complete_puzzle(self) -> None:
-        # TODO: implement puzzle completion logic
-        if self.current_move >= len(self.moves):
-            self.is_board_active = False
-            print('Puzzle completed!')
-        pass
+    def signal_complete_puzzle(self) -> None:
+        print('Puzzle completed!')
+        self.is_board_active = False
+        status = 3 if self.was_incorrect_move else 4
+        self.board.update_status(status)
 
 
 class PromotionChoiceWindow(QDialog):
