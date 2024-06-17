@@ -98,15 +98,13 @@ class UserDataManager:
         return user_puzzle_statistics
     
     def get_user_theme_statistics(self, user_id: int):
-        query = (
+        query_1 = (
             select(UserThemeStatistics)
             .where(UserThemeStatistics.user_id == user_id)
             .order_by(UserThemeStatistics.puzzles_solved.desc())
             .limit(3)
         )
-        most_popular = self.session.execute(query).all()
-
-        query = (
+        query_2 = (
             select(
                 UserThemeStatistics,
                 (UserThemeStatistics.puzzles_solved / UserThemeStatistics.puzzles_played)
@@ -119,9 +117,7 @@ class UserDataManager:
             )
             .limit(3)
         )
-        best_percentage = self.session.execute(query).all()
-
-        query = (
+        query_3 = (
             select(
                 UserThemeStatistics,
                 (UserThemeStatistics.puzzles_solved / UserThemeStatistics.puzzles_played)
@@ -134,7 +130,10 @@ class UserDataManager:
             )
             .limit(3)
         )
-        worst_percentage = self.session.execute(query).all()
+
+        most_popular = self.session.execute(query_1).all()
+        best_percentage = self.session.execute(query_2).all()
+        worst_percentage = self.session.execute(query_3).all()
 
         return most_popular, best_percentage, worst_percentage
     

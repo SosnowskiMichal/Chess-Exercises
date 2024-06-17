@@ -8,7 +8,7 @@ from PyQt6.QtGui import QPixmap, QColor
 from PyQt6.QtCore import Qt, pyqtSignal
 
 from .pieces import *
-from .board_controller import BoardController
+from .board_controller import BoardController, ChessBoardCoordinate
 
 
 class ChessBoard(QWidget):
@@ -57,6 +57,8 @@ class ChessBoard(QWidget):
 
     def clear_board(self) -> None:
         for widget in self.findChildren(ChessPiece):
+            widget.deleteLater()
+        for widget in self.findChildren(ChessBoardCoordinate):
             widget.deleteLater()
 
     def update_status(self, status: int) -> None:

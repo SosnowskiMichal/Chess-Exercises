@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt
 from ui.main_menu import MainMenu, MenuButton, AppNameLabel, MenuHeading
 
 
-class CustomPracticeSettings(QWidget):
+class CustomPuzzlesSettings(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.initialize_layout()
@@ -29,7 +29,7 @@ class CustomPracticeSettings(QWidget):
         self.window_name_container_layout.addWidget(self.window_name_label)
 
     def create_customization_container(self) -> None:
-        container = MainMenu.create_menu_container(grid=True)
+        container = MainMenu.create_menu_container(type='g')
         self.customization_container, self.customization_container_layout = container
         self.customization_container_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.customization_container_layout.setHorizontalSpacing(20)

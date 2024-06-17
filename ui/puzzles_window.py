@@ -5,7 +5,7 @@ from ui.main_menu import MainMenu, MenuButton, AppNameLabel, MenuHeading
 from board import ChessBoard
 
 
-class PracticeWindow(QWidget):
+class PuzzlesWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.initialize_layout()
@@ -40,7 +40,7 @@ class PracticeWindow(QWidget):
         self.mode_name_container_layout.addWidget(mode_name_label)
 
     def create_puzzle_info_container(self) -> None:
-        container = MainMenu.create_menu_container(grid=True)
+        container = MainMenu.create_menu_container(type='g')
         self.puzzle_info_container, self.puzzle_info_container_layout = container
         self.puzzle_info_container_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.puzzle_info_container_layout.setHorizontalSpacing(20)
@@ -60,13 +60,14 @@ class PracticeWindow(QWidget):
         container = MainMenu.create_menu_container()
         self.status_container, self.status_container_layout = container
         self.status_label = MenuHeading()
-        self.status_label.setStyleSheet('font-size: 20px; font-weight: bold;')
         self.status_container_layout.addWidget(self.status_label)
 
     def create_buttons_container(self) -> None:
         container = MainMenu.create_menu_container()
         self.buttons_container, self.buttons_container_layout = container
         self.new_puzzle_button = MenuButton('New puzzle')
+        self.customize_puzzles_button = MenuButton('Customize puzzles')
         self.return_button = MenuButton('Return to menu')
         self.buttons_container_layout.addWidget(self.new_puzzle_button)
+        self.buttons_container_layout.addWidget(self.customize_puzzles_button)
         self.buttons_container_layout.addWidget(self.return_button)

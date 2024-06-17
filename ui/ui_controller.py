@@ -1,8 +1,11 @@
+import os
 import re
 
 from PyQt6.QtWidgets import QStackedWidget, QMessageBox
 
+import board
 from data_managers import UserDataManager
+from ui import settings_menu
 
 
 class UIController:
@@ -13,10 +16,12 @@ class UIController:
         self.current_user_id = 1
 
         self.initialize_board_theme()
-        self.initialize_custom_practice_settings()
+        self.initialize_custom_puzzles_settings()
+        self.initialize_settings_menu()
+
         self.connect_main_menu_signals()
-        self.connect_practice_window_signals()
-        self.connect_custom_practice_settings_signals()
+        self.connect_puzzles_window_signals()
+        self.connect_custom_puzzles_settings_signals()
         self.connect_statistics_window_signals()
         self.connect_settings_menu_signals()
 
@@ -24,45 +29,66 @@ class UIController:
         user_settings = self.user_data_manager.get_user_settings(self.current_user_id)
         board_style = user_settings.board_style
         piece_style = user_settings.piece_style
-        self.main_window.practice_window.board_widget.set_style(board_style, piece_style)
+        self.main_window.puzzles_window.board_widget.set_style(board_style, piece_style)
 
-    def initialize_custom_practice_settings(self) -> None:
+    def initialize_custom_puzzles_settings(self) -> None:
         puzzle_manager = (
-            self.main_window.practice_window.board_widget.board_controller.puzzle_manager
+            self.main_window.puzzles_window.board_widget.board_controller.puzzle_manager
         )
-        custom_practice_settings = self.main_window.custom_practice_settings
+        custom_puzzles_settings = self.main_window.custom_puzzles_settings
         min_rating, max_rating = puzzle_manager.get_rating_range()
         themes = puzzle_manager.get_puzzle_themes()
         themes = ['--all--'] + self.parse_db_themes(themes, list=True)
-        custom_practice_settings.min_rating_value.setRange(min_rating, max_rating)
-        custom_practice_settings.max_rating_value.setRange(min_rating, max_rating)
-        custom_practice_settings.min_rating_value.setValue(min_rating)
-        custom_practice_settings.max_rating_value.setValue(max_rating)
-        custom_practice_settings.theme_value.addItems(themes)
+        custom_puzzles_settings.min_rating_value.setRange(min_rating, max_rating)
+        custom_puzzles_settings.max_rating_value.setRange(min_rating, max_rating)
+        custom_puzzles_settings.min_rating_value.setValue(min_rating)
+        custom_puzzles_settings.max_rating_value.setValue(max_rating)
+        custom_puzzles_settings.theme_value.addItems(themes)
+
+    def initialize_settings_menu(self) -> None:
+        user_settings = self.user_data_manager.get_user_settings(self.current_user_id)
+        user_board_style = user_settings.board_style
+        user_piece_style = user_settings.piece_style
+
+        board_assets_dir = os.path.join(os.path.dirname(__file__), '..', 'assets', 'boards')
+        piece_assets_dir = os.path.join(os.path.dirname(__file__), '..', 'assets', 'pieces')
+        board_styles = [
+            entry for entry in os.listdir(board_assets_dir)
+            if os.path.isdir(os.path.join(board_assets_dir, entry))
+        ]
+        piece_styles = [
+            entry for entry in os.listdir(piece_assets_dir)
+            if os.path.isdir(os.path.join(piece_assets_dir, entry))
+        ]
+
+        settings_menu = self.main_window.settings_menu
+        settings_menu.initialize_board_styles(board_styles, user_board_style)
+        settings_menu.initialize_pieces_styles(piece_styles, user_piece_style)
 
     def connect_main_menu_signals(self) -> None:
         main_menu = self.main_window.main_menu
-        main_menu.free_practice_button.clicked.connect(self.show_practice_window)
-        main_menu.custom_practice_button.clicked.connect(self.show_custom_practice_settings)
+        main_menu.puzzles_button.clicked.connect(self.show_puzzles_window)
+        main_menu.custom_puzzles_button.clicked.connect(self.show_custom_puzzles_settings)
         main_menu.statistics_button.clicked.connect(self.show_statistics_window)
         main_menu.settings_button.clicked.connect(self.show_settings_menu)
         main_menu.quit_button.clicked.connect(self.main_window.close)
 
-    def connect_practice_window_signals(self) -> None:
-        practice_window = self.main_window.practice_window
-        practice_window.new_puzzle_button.clicked.connect(self.initialize_puzzle)
-        practice_window.return_button.clicked.connect(self.close_practice_window)
-        practice_window.board_widget.board_status_signal.connect(self.update_board_status)
+    def connect_puzzles_window_signals(self) -> None:
+        puzzles_window = self.main_window.puzzles_window
+        puzzles_window.new_puzzle_button.clicked.connect(self.initialize_puzzle)
+        puzzles_window.customize_puzzles_button.clicked.connect(self.customize_puzzles)
+        puzzles_window.return_button.clicked.connect(self.close_puzzles_window)
+        puzzles_window.board_widget.board_status_signal.connect(self.update_board_status)
 
-    def connect_custom_practice_settings_signals(self) -> None:
-        custom_practice_settings = self.main_window.custom_practice_settings
-        custom_practice_settings.start_button.clicked.connect(
-            self.initialize_custom_practice_window
+    def connect_custom_puzzles_settings_signals(self) -> None:
+        custom_puzzles_settings = self.main_window.custom_puzzles_settings
+        custom_puzzles_settings.start_button.clicked.connect(
+            self.initialize_custom_puzzles_window
         )
-        custom_practice_settings.reset_choice_button.clicked.connect(
-            self.reset_custom_practice_settings
+        custom_puzzles_settings.reset_choice_button.clicked.connect(
+            self.reset_custom_puzzles_settings
         )
-        custom_practice_settings.return_button.clicked.connect(self.show_main_menu)
+        custom_puzzles_settings.return_button.clicked.connect(self.show_main_menu)
 
     def connect_statistics_window_signals(self) -> None:
         statistics_window = self.main_window.statistics_window
@@ -78,17 +104,13 @@ class UIController:
         widget = self.main_window.main_menu
         self.central_widget.setCurrentWidget(widget)
     
-    def show_practice_window(self) -> None:
-        widget = self.main_window.practice_window
+    def show_puzzles_window(self) -> None:
+        widget = self.main_window.puzzles_window
         self.central_widget.setCurrentWidget(widget)
 
-    def show_custom_practice_settings(self) -> None:
-        widget = self.main_window.custom_practice_settings
+    def show_custom_puzzles_settings(self) -> None:
+        widget = self.main_window.custom_puzzles_settings
         self.central_widget.setCurrentWidget(widget)
-
-    # def show_time_modes_menu(self) -> None:
-    #     widget = self.main_window.time_modes_menu
-    #     self.central_widget.setCurrentWidget(widget)
 
     def show_statistics_window(self) -> None:
         widget = self.main_window.statistics_window
@@ -100,43 +122,55 @@ class UIController:
         self.central_widget.setCurrentWidget(widget)
 
     def save_settings(self) -> None:
-        board_theme = None
-        piece_theme = None
-        # TODO: implement
+        settings_menu = self.main_window.settings_menu
+        board_style = settings_menu.board_styles_buttons.checkedButton()
+        piece_style = settings_menu.pieces_styles_buttons.checkedButton()
 
-    def initialize_custom_practice_window(self) -> None:
-        custom_practice_settings = self.main_window.custom_practice_settings
-        min_rating = custom_practice_settings.min_rating_value.value()
-        max_rating = custom_practice_settings.max_rating_value.value()
+        if board_style is None or piece_style is None:
+            self.show_error_popup_window('Select board and piece styles')
+            return
+        else:
+            board_style = board_style.objectName()
+            piece_style = piece_style.objectName()
+            self.user_data_manager.update_user_settings(
+                self.current_user_id, board_style, piece_style
+            )
+            
+        self.main_window.puzzles_window.board_widget.set_style(board_style, piece_style)
+
+    def initialize_custom_puzzles_window(self) -> None:
+        custom_puzzles_settings = self.main_window.custom_puzzles_settings
+        min_rating = custom_puzzles_settings.min_rating_value.value()
+        max_rating = custom_puzzles_settings.max_rating_value.value()
 
         if min_rating > max_rating:
             self.show_error_popup_window('Invalid rating range')
             return
         
-        theme = custom_practice_settings.theme_value.currentText()
+        theme = custom_puzzles_settings.theme_value.currentText()
         theme = None if theme == '--all--' else self.parse_theme(theme)
-        board_controller = self.main_window.practice_window.board_widget.board_controller
+        board_controller = self.main_window.puzzles_window.board_widget.board_controller
         board_controller.set_puzzle_filters(min_rating, max_rating, theme)
-        self.show_practice_window()
+        self.show_puzzles_window()
 
-    def reset_custom_practice_settings(self) -> None:
-        custom_practice_settings = self.main_window.custom_practice_settings
-        min_rating = custom_practice_settings.min_rating_value.minimum()
-        max_rating = custom_practice_settings.max_rating_value.maximum()
-        custom_practice_settings.min_rating_value.setValue(min_rating)
-        custom_practice_settings.max_rating_value.setValue(max_rating)
-        custom_practice_settings.theme_value.setCurrentIndex(0)
+    def reset_custom_puzzles_settings(self) -> None:
+        custom_puzzles_settings = self.main_window.custom_puzzles_settings
+        min_rating = custom_puzzles_settings.min_rating_value.minimum()
+        max_rating = custom_puzzles_settings.max_rating_value.maximum()
+        custom_puzzles_settings.min_rating_value.setValue(min_rating)
+        custom_puzzles_settings.max_rating_value.setValue(max_rating)
+        custom_puzzles_settings.theme_value.setCurrentIndex(0)
 
     def initialize_puzzle(self) -> None:
-        practice_window = self.main_window.practice_window
-        practice_window.board_widget.initialize_puzzle()
+        puzzles_window = self.main_window.puzzles_window
+        puzzles_window.board_widget.initialize_puzzle()
         puzzle_rating, puzzle_themes = (
-            practice_window.board_widget.get_current_puzzle_info()
+            puzzles_window.board_widget.get_current_puzzle_info()
         )
         if puzzle_rating is None or puzzle_themes is None:
             return
-        practice_window.rating_value.setText(str(puzzle_rating))
-        practice_window.themes_value.setText(self.parse_db_themes(puzzle_themes))
+        puzzles_window.rating_value.setText(str(puzzle_rating))
+        puzzles_window.themes_value.setText(self.parse_db_themes(puzzle_themes))
 
     def parse_db_themes(self, themes: str, list: bool = False) -> str:
         result = []
@@ -153,14 +187,14 @@ class UIController:
         return theme[0].lower() + theme[1:]
     
     def update_board_status(self, status: int) -> None:
-        practice_window = self.main_window.practice_window
-        _, puzzle_themes = practice_window.board_widget.get_current_puzzle_info()
+        puzzles_window = self.main_window.puzzles_window
+        _, puzzle_themes = puzzles_window.board_widget.get_current_puzzle_info()
         if status == 0:
             status_text = 'Make a move!'
         elif status == 1:
             status_text = 'Correct move!'
         elif status == 2:
-            status_text = 'Incorrect move\nTry again'
+            status_text = 'Incorrect move - Try again'
         elif status == 3:
             status_text = 'Puzzle solved!'
             self.user_data_manager.update_user_puzzle_statistics(
@@ -174,16 +208,23 @@ class UIController:
         elif status == -1:
             self.show_error_popup_window('No puzzles available')
             return
-        practice_window.status_label.setText(status_text)
+        puzzles_window.status_label.setText(status_text)
 
-    def close_practice_window(self) -> None:
-        practice_window = self.main_window.practice_window
-        practice_window.board_widget.clear_board()
-        practice_window.rating_value.clear()
-        practice_window.themes_value.clear()
-        practice_window.status_label.clear()
-        practice_window.board_widget.board_controller.clear_puzzle_filters()
+    def customize_puzzles(self) -> None:
+        self.clear_puzzle_info()
+        self.show_custom_puzzles_settings()
+
+    def close_puzzles_window(self) -> None:
+        self.clear_puzzle_info()
         self.show_main_menu()
+
+    def clear_puzzle_info(self) -> None:
+        puzzles_window = self.main_window.puzzles_window
+        puzzles_window.board_widget.clear_board()
+        puzzles_window.rating_value.clear()
+        puzzles_window.themes_value.clear()
+        puzzles_window.status_label.clear()
+        puzzles_window.board_widget.board_controller.clear_puzzle_filters()
 
     def initialize_statistics(self) -> None:
         statistics_window = self.main_window.statistics_window
@@ -234,6 +275,7 @@ class UIController:
             statistics_window.worst_percentage_value.setText(worst_percentage_text)
 
     def reset_progress(self) -> None:
+        # TODO: show confirm dialog
         self.user_data_manager.reset_user_progress(self.current_user_id)
         self.initialize_statistics()
 

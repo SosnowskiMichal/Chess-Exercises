@@ -1,6 +1,7 @@
 from typing import Tuple
 from PyQt6.QtWidgets import (
-    QWidget, QPushButton, QVBoxLayout, QGridLayout, QLabel, QComboBox, QLineEdit
+    QWidget, QPushButton, QVBoxLayout, QGridLayout,
+    QHBoxLayout, QLabel, QComboBox, QLineEdit
 )
 from PyQt6.QtCore import Qt
 
@@ -53,26 +54,33 @@ class MainMenu(QWidget):
         container = MainMenu.create_menu_container()
         self.buttons_container, self.buttons_container_layout = container
 
-        self.free_practice_button = MenuButton('Free Practice')
-        self.custom_practice_button = MenuButton('Custom Practice')
+        self.puzzles_button = MenuButton('Puzzles')
+        self.custom_puzzles_button = MenuButton('Custom puzzles')
         self.settings_button = MenuButton('Settings')
         self.statistics_button = MenuButton('Statistics')
         self.quit_button = MenuButton('Quit', 'red_button')
 
-        self.buttons_container_layout.addWidget(self.free_practice_button)
-        self.buttons_container_layout.addWidget(self.custom_practice_button)
+        self.buttons_container_layout.addWidget(self.puzzles_button)
+        self.buttons_container_layout.addWidget(self.custom_puzzles_button)
         self.buttons_container_layout.addSpacing(20)
         self.buttons_container_layout.addWidget(self.statistics_button)
         self.buttons_container_layout.addWidget(self.settings_button)
         self.buttons_container_layout.addSpacing(20)
         self.buttons_container_layout.addWidget(self.quit_button)
 
-    def create_menu_container(grid: bool = False) -> Tuple[QWidget, QGridLayout | QVBoxLayout]:
+    def create_menu_container(
+        type: str = 'v', width: int = 550
+    ) -> Tuple[QWidget, QGridLayout | QVBoxLayout | QHBoxLayout]:
         container = QWidget()
         container.setObjectName('menu-container')
-        container.setFixedWidth(550)
+        container.setFixedWidth(width)
         container.setContentsMargins(20, 20, 20, 20)
-        container_layout = QGridLayout(container) if grid else QVBoxLayout(container)
+        if type == 'g':
+            container_layout = QGridLayout(container)
+        elif type == 'h':
+            container_layout = QHBoxLayout(container)
+        else:
+            container_layout = QVBoxLayout(container)
         container_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         return container, container_layout
 

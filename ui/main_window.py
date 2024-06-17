@@ -4,8 +4,8 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 from PyQt6.QtGui import QFont, QFontDatabase
 
 from .main_menu import MainMenu
-from .practice_window import PracticeWindow
-from .custom_practice_settings import CustomPracticeSettings
+from .puzzles_window import PuzzlesWindow
+from .custom_puzzles_settings import CustomPuzzlesSettings
 from .statistics_window import StatisticsWindow
 from .settings_menu import SettingsMenu
 from .ui_controller import UIController
@@ -54,13 +54,13 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.central_widget)
 
         self.main_menu = MainMenu()
-        self.practice_window = PracticeWindow()
-        self.custom_practice_settings = CustomPracticeSettings()
+        self.puzzles_window = PuzzlesWindow()
+        self.custom_puzzles_settings = CustomPuzzlesSettings()
         self.statistics_window = StatisticsWindow()
         self.settings_menu = SettingsMenu()
 
         self.central_widget.addWidget(self.main_menu)
-        self.central_widget.addWidget(self.practice_window)
-        self.central_widget.addWidget(self.custom_practice_settings)
+        self.central_widget.addWidget(self.puzzles_window)
+        self.central_widget.addWidget(self.custom_puzzles_settings)
         self.central_widget.addWidget(self.statistics_window)
         self.central_widget.addWidget(self.settings_menu)

@@ -35,10 +35,6 @@ class BoardController:
         if self.puzzle_info is None or self.puzzle_moves is None:
             self.board.update_status(-1)
             return
-        if len(self.puzzle_moves.moves.split()[0]) == 5:
-            print('FOUND')
-            self.board.update_status(-1)
-            return
         self.initialize_data()
         self.setup_board()
         self.make_next_computer_move()
@@ -94,6 +90,17 @@ class BoardController:
                     self.pieces.append(piece)
                     self.board.grid_layout.addWidget(piece, curr_row, curr_col)
                     col += 1
+                    
+        for i in range(8):
+            char = chr(ord('a') + i)
+            num = i
+            if self.player_color == 'b':
+                num = 7 - i
+                char = chr(ord('h') - i)
+            col_label = ChessBoardCoordinate(char, 'col', self.board)
+            row_label = ChessBoardCoordinate(str(8 - num), 'row', self.board)
+            self.board.grid_layout.addWidget(col_label, 8, i)
+            self.board.grid_layout.addWidget(row_label, i, 8)
 
     def create_piece(
         self, char: str, square: str, piece_style: str, parent: QWidget = None
@@ -368,3 +375,12 @@ class PromotionChoiceWindow(QDialog):
     def knight_button_clicked(self) -> None:
         self.result = 'n'
         self.accept()
+
+
+class ChessBoardCoordinate(QLabel):
+    def __init__(self, text: str, type: str, parent: QWidget = None) -> None:
+        super().__init__(text, parent)
+        if type == 'col':
+            self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        elif type == 'row':
+            self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)

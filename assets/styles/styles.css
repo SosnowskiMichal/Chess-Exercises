@@ -40,3 +40,9 @@ MenuHeading {
 ThemeSelector {
     padding: 0 10px;
 }
+
+ChessBoardCoordinate {
+    padding: 2px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.25);
+}

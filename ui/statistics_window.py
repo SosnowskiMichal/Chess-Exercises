@@ -29,7 +29,7 @@ class StatisticsWindow(QWidget):
         self.window_name_container_layout.addWidget(AppNameLabel('Statistics'))
 
     def create_puzzle_statistics_container(self) -> None:
-        container = MainMenu.create_menu_container(grid=True)
+        container = MainMenu.create_menu_container(type='g')
         self.puzzle_statistics_container, self.puzzle_statistics_container_layout = container
         self.puzzle_statistics_container_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.puzzle_statistics_container_layout.setHorizontalSpacing(20)
@@ -50,7 +50,7 @@ class StatisticsWindow(QWidget):
         self.puzzle_statistics_container_layout.addWidget(self.percent_solved_value, 3, 1)
 
     def create_theme_statistics_container(self) -> None:
-        container = MainMenu.create_menu_container(grid=True)
+        container = MainMenu.create_menu_container(type='g')
         self.theme_statistics_container, self.theme_statistics_container_layout = container
         self.theme_statistics_container_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.theme_statistics_container_layout.setHorizontalSpacing(20)
