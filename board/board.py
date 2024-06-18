@@ -1,14 +1,15 @@
+from optparse import Option
 import os
 
-from typing import Tuple
+from typing import Tuple, Optional
 from PyQt6.QtWidgets import (
     QWidget, QGridLayout, QLabel, QSizePolicy, QGraphicsColorizeEffect
 )
-from PyQt6.QtGui import QPixmap, QColor
+from PyQt6.QtGui import QPixmap, QColor, QMouseEvent
 from PyQt6.QtCore import Qt, pyqtSignal
 
 from .pieces import *
-from .board_controller import BoardController, ChessBoardCoordinate
+from .board_controller import BoardController
 
 
 class ChessBoard(QWidget):
@@ -16,7 +17,7 @@ class ChessBoard(QWidget):
         super().__init__()
         self.board_style = 'dark_wood'
         self.piece_style = 'dark_wood'
-        self.assets_dir = self.get_assets_dir(self.board_style)
+        self.set_assets_dir()
         self.board_controller = BoardController(self)
         self.initialize_board()
 
@@ -24,15 +25,20 @@ class ChessBoard(QWidget):
 
     def initialize_board(self) -> None:
         self.setMinimumSize(720, 720)
-        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum
+        )
         self.setAcceptDrops(True)
         self.initialize_layout()
         self.initialize_squares()
+        self.board_controller.setup_board_coordinates(init=True)
 
-    def get_assets_dir(self, board_style: str) -> str:
+    def set_assets_dir(self) -> None:
         assets_dir = os.path.join(
-            os.path.dirname(__file__), '..', 'assets', 'boards', board_style)
-        return os.path.normpath(assets_dir)
+            os.path.dirname(__file__), '..',
+            'assets', 'boards', self.board_style
+        )
+        self.assets_dir = os.path.normpath(assets_dir)
 
     def initialize_layout(self) -> None:
         self.grid_layout = QGridLayout(self)
@@ -43,6 +49,7 @@ class ChessBoard(QWidget):
     def initialize_squares(self) -> None:
         for widget in self.findChildren(ChessBoardSquare):
             widget.deleteLater()
+
         for row in range(8):
             for col in range(8):
                 square = ChessBoardSquare(row, col, self)
@@ -52,14 +59,14 @@ class ChessBoard(QWidget):
         self.clear_board()
         self.board_controller.initialize_puzzle()
 
-    def get_current_puzzle_info(self) -> Tuple[int, str]:
+    def get_current_puzzle_info(self) -> Tuple[Optional[int], Optional[str]]:
         return self.board_controller.get_current_puzzle_info()
 
     def clear_board(self) -> None:
         for widget in self.findChildren(ChessPiece):
             widget.deleteLater()
-        for widget in self.findChildren(ChessBoardCoordinate):
-            widget.deleteLater()
+        self.board_controller.setup_board_coordinates(init=True)
+        self.board_controller.is_board_active = False
 
     def update_status(self, status: int) -> None:
         self.board_status_signal.emit(status)
@@ -67,12 +74,12 @@ class ChessBoard(QWidget):
     def set_style(self, board_style: str, piece_style: str) -> None:
         self.board_style = board_style
         self.piece_style = piece_style
-        self.assets_dir = self.get_assets_dir(self.board_style)
+        self.set_assets_dir()
         self.initialize_squares()
 
 
 class ChessBoardSquare(QLabel):
-    def __init__(self, row: int, col: int, board: ChessBoard = None) -> None:
+    def __init__(self, row: int, col: int, board: ChessBoard) -> None:
         super().__init__(board)
         self.board = board
         self.row = row
@@ -81,7 +88,9 @@ class ChessBoardSquare(QLabel):
 
     def initialize_square(self) -> None:
         self.setMaximumSize(90, 90)
-        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum
+        )
         self.setAcceptDrops(True)
         self.set_background()
 
@@ -95,8 +104,7 @@ class ChessBoardSquare(QLabel):
             background_image = QPixmap(os.path.join(assets_dir, 'black.png'))
             self.setPixmap(background_image)
 
-    def dragEnterEvent(self, event) -> None:
-        # TODO: rework coloring
+    def dragEnterEvent(self, event: QMouseEvent) -> None:
         widget = event.source()
         if widget:
             board: ChessBoard = self.parentWidget()
@@ -105,15 +113,15 @@ class ChessBoardSquare(QLabel):
             )
             if board.board_controller.validate_move(widget, square_name):
                 effect = QGraphicsColorizeEffect()
-                effect.setColor(QColor('red'))
+                effect.setColor(QColor('gray'))
                 self.setGraphicsEffect(effect)
                 event.accept()
 
-    def dragLeaveEvent(self, event) -> None:
+    def dragLeaveEvent(self, event: QMouseEvent) -> None:
         self.setGraphicsEffect(None)
         event.accept()
 
-    def dropEvent(self, event) -> None:
+    def dropEvent(self, event: QMouseEvent) -> None:
         self.setGraphicsEffect(None)
         widget = event.source()
         if widget:

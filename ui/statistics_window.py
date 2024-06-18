@@ -1,10 +1,11 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt6.QtCore import Qt
 
-from ui.main_menu import MainMenu, MenuButton, MenuHeading, AppNameLabel
+from .main_menu import MainMenu, MenuButton, MenuHeading, AppNameLabel
+
 
 class StatisticsWindow(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.initialize_layout()
 

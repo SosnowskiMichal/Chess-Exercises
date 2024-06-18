@@ -1,15 +1,14 @@
 import os
 
+from typing import List, Optional
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QGridLayout, QLabel,
-    QHBoxLayout, QRadioButton, QButtonGroup, QSizePolicy
+    QHBoxLayout, QRadioButton, QButtonGroup
 )
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
-from chess import square
-from sympy import Q
 
-from ui.main_menu import MainMenu, MenuButton, MenuHeading, AppNameLabel
+from .main_menu import MainMenu, MenuButton, MenuHeading, AppNameLabel
 
 
 class SettingsMenu(QWidget):
@@ -56,23 +55,28 @@ class SettingsMenu(QWidget):
         self.buttons_container_layout.addWidget(self.save_button)
         self.buttons_container_layout.addWidget(self.return_button)
 
-    def initialize_board_styles(self, styles: list[str], user_style: str) -> None:
+    def initialize_board_styles(self, styles: List[str], user_style: str) -> None:
         for style in styles:
             style_option = StyleOption(style, 4, self.board_styles_buttons)
             if style == user_style:
                 style_option.radio_button.setChecked(True)
             self.board_settings_container_layout.addWidget(style_option)
 
-    def initialize_pieces_styles(self, styles: list[str], user_style: str) -> None:
+    def initialize_pieces_styles(self, styles: List[str], user_style: str) -> None:
         for style in styles:
             style_option = StyleOption(style, 2, self.pieces_styles_buttons)
             if style == user_style:
                 style_option.radio_button.setChecked(True)
             self.pieces_settings_container_layout.addWidget(style_option)
 
+
 class StyleOption(QWidget):
     def __init__(
-        self, style_option: str, grid_size: int, button_group: QButtonGroup, parent: QWidget = None
+        self,
+        style_option: str,
+        grid_size: int,
+        button_group: QButtonGroup,
+        parent: Optional[QWidget] = None
     ) -> None:
         super().__init__(parent)
         self.style_option = style_option
@@ -85,7 +89,8 @@ class StyleOption(QWidget):
     def set_assets_dir(self) -> None:
         element = 'boards' if self.grid_size == 4 else 'pieces'
         assets_dir = os.path.join(
-            os.path.dirname(__file__), '..', 'assets', element, self.style_option)
+            os.path.dirname(__file__), '..', 'assets', element, self.style_option
+        )
         self.assets_dir = os.path.normpath(assets_dir)
 
     def initialize_layout(self) -> None:
@@ -110,17 +115,28 @@ class StyleOption(QWidget):
         
     def initialize_images(self) -> None:
         if self.grid_size == 4:
-            white_square_pix = QPixmap(os.path.join(self.assets_dir, 'black.png')).scaled(40, 40)
-            black_square_pix = QPixmap(os.path.join(self.assets_dir, 'white.png')).scaled(40, 40)
+            white_square_pix = QPixmap(
+                os.path.join(self.assets_dir, 'black.png')
+            ).scaled(40, 40)
+            black_square_pix = QPixmap(
+                os.path.join(self.assets_dir, 'white.png')
+            ).scaled(40, 40)
             for i in range(2):
                 for j in range(2):
                     square = QLabel()
-                    square.setPixmap(white_square_pix if (i + j) % 2 != 0 else black_square_pix)
+                    square.setPixmap(
+                        white_square_pix if (i + j) % 2 != 0
+                        else black_square_pix
+                    )
                     square.setMaximumSize(40, 40)
                     self.grid_layout.addWidget(square, i, j)
         elif self.grid_size == 2:
-            white_queen_pix = QPixmap(os.path.join(self.assets_dir, 'queen-white.png')).scaled(60, 60)
-            black_queen_pix = QPixmap(os.path.join(self.assets_dir, 'queen-black.png')).scaled(60, 60)
+            white_queen_pix = QPixmap(
+                os.path.join(self.assets_dir, 'queen-white.png')
+            ).scaled(60, 60)
+            black_queen_pix = QPixmap(
+                os.path.join(self.assets_dir, 'queen-black.png')
+            ).scaled(60, 60)
             for i in range(2):
                 piece = QLabel()
                 piece.setPixmap(white_queen_pix if i == 0 else black_queen_pix)

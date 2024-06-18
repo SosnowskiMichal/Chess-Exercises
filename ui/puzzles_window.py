@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
 from PyQt6.QtCore import Qt
 
-from ui.main_menu import MainMenu, MenuButton, AppNameLabel, MenuHeading
+from .main_menu import MainMenu, MenuButton, AppNameLabel, MenuHeading
 from board import ChessBoard
 
 
@@ -65,9 +65,14 @@ class PuzzlesWindow(QWidget):
     def create_buttons_container(self) -> None:
         container = MainMenu.create_menu_container()
         self.buttons_container, self.buttons_container_layout = container
+
+        self.hint_button = MenuButton('Hint')
         self.new_puzzle_button = MenuButton('New puzzle')
         self.customize_puzzles_button = MenuButton('Customize puzzles')
         self.return_button = MenuButton('Return to menu')
+
+        self.buttons_container_layout.addWidget(self.hint_button)
+        self.buttons_container_layout.addSpacing(20)
         self.buttons_container_layout.addWidget(self.new_puzzle_button)
         self.buttons_container_layout.addWidget(self.customize_puzzles_button)
         self.buttons_container_layout.addWidget(self.return_button)

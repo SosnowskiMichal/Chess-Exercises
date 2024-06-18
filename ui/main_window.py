@@ -18,14 +18,18 @@ class Application(QApplication):
         self.load_stylesheet()
 
     def load_stylesheet(self) -> None:
-        stylesheet_path = os.path.normpath(os.path.join(
-            os.path.dirname(__file__), '..', 'assets', 'styles', 'styles.css'))
+        stylesheet_path = os.path.normpath(
+            os.path.join(
+                os.path.dirname(__file__), '..', 'assets', 'styles', 'styles.css'
+            )
+        )
         with open(stylesheet_path, 'r') as file:
             self.setStyleSheet(file.read())
     
     def load_fonts(self) -> None:
         fonts_path = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), '..', 'assets', 'fonts'))
+            os.path.join(os.path.dirname(__file__), '..', 'assets', 'fonts')
+        )
         for filename in os.listdir(fonts_path):
             if filename.endswith(('.ttf', '.otf')):
                 fontpath = os.path.join(fonts_path, filename)
@@ -40,12 +44,6 @@ class MainWindow(QMainWindow):
         self.setContentsMargins(10, 10, 10, 10)
         self.setMinimumSize(1400, 800)
         
-        # self.resize(1300, 800)
-        # self.showMaximized()
-        # self.showFullScreen()
-        # self.showNormal()
-        # self.setFixedSize(self.size())
-
         self.initialize_central_widget()
         self.ui_controller = UIController(self)
 

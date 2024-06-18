@@ -1,24 +1,34 @@
+import os
 import re
 import chess
 
-from typing import Dict, List, Tuple, Optional
-from PyQt6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QHBoxLayout
+from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
+from PyQt6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QHBoxLayout, QLabel
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QIcon
 
-from .pieces import *
+from .pieces import ChessPiece, King, Queen, Rook, Bishop, Knight, Pawn
 from data_managers import PuzzleManager
+
+if TYPE_CHECKING:
+    from .board import ChessBoard
 
 
 class BoardController:
-    def __init__(self, board) -> None:
+    def __init__(self, board: 'ChessBoard') -> None:
         self.board = board
         self.puzzle_manager = PuzzleManager()
         self.rating = (None, None)
         self.theme = None
+        self.puzzle_info = None
+        self.puzzle_moves = None
+        self.is_board_active = False
 
     def set_puzzle_filters(
-        self, min_rating: int = None, max_rating: int = None, theme: str = None
+        self,
+        min_rating: Optional[int] = None,
+        max_rating: Optional[int] = None,
+        theme: Optional[str] = None
     ) -> None:
         if (min_rating, max_rating) != self.puzzle_manager.get_rating_range():
             self.rating = (min_rating, max_rating)
@@ -32,29 +42,41 @@ class BoardController:
 
     def initialize_puzzle(self) -> None:
         self.get_puzzle_data(*self.rating, self.theme)
+
         if self.puzzle_info is None or self.puzzle_moves is None:
             self.board.update_status(-1)
             return
+        
         self.initialize_data()
         self.setup_board()
         self.make_next_computer_move()
         self.board.update_status(0)
 
     def get_puzzle_data(
-        self, min_rating: int = None, max_rating: int = None, theme: str = None
+        self,
+        min_rating: Optional[int] = None,
+        max_rating: Optional[int] = None,
+        theme: Optional[str] = None
     ) -> None:
         result = self.puzzle_manager.get_puzzle(min_rating, max_rating, theme)
         self.puzzle_info, self.puzzle_moves = result if result else (None, None)
 
-    def get_current_puzzle_info(self) -> Tuple[int, str]:
+    def get_current_puzzle_info(self) -> Tuple[Optional[int], Optional[str]]:
         if self.puzzle_info is None or self.puzzle_moves is None:
             return None, None
         return self.puzzle_info.rating, self.puzzle_info.themes
+
+    def get_next_move(self) -> Optional[str]:
+        if not self.is_board_active:
+            return None
+        self.was_hint_used = True
+        return self.moves[self.current_move]
 
     def initialize_data(self) -> None:
         self.pieces = []
         self.is_board_active = True
         self.was_incorrect_move = False
+        self.was_hint_used = False
         self.board_controller = chess.Board(self.puzzle_moves.fen)
         self.legal_moves = self.generate_legal_moves()
         self.parsed_fen = self.parse_fen(self.puzzle_moves.fen)
@@ -62,7 +84,7 @@ class BoardController:
         self.moves = self.puzzle_moves.moves.split()
         self.current_move = 0
 
-    def parse_fen(self, fen: str) -> Optional[Dict[str, str]]:
+    def parse_fen(self, fen: str) -> Optional[Dict[str, str | int]]:
         fen_pattern = (
             r'(?P<piece_placement>[^ ]+) '
             r'(?P<active_color>[wb]) '
@@ -84,13 +106,22 @@ class BoardController:
                 else:
                     curr_row = row if self.player_color == 'w' else 7 - row
                     curr_col = col if self.player_color == 'w' else 7 - col
-                    square = f'{chr(col + ord('a'))}{8 - row}'
+                    square = f'{chr(col + ord("a"))}{8 - row}'
                     piece = self.create_piece(
-                        char, square, self.board.piece_style, self.board)
+                        char, square, self.board.piece_style, self.board
+                    )
                     self.pieces.append(piece)
                     self.board.grid_layout.addWidget(piece, curr_row, curr_col)
                     col += 1
-                    
+        self.setup_board_coordinates()
+
+    def setup_board_coordinates(self, init: bool = False) -> None:
+        for widget in self.board.findChildren(ChessBoardCoordinate):
+            widget.deleteLater()
+
+        if init:
+            self.player_color = 'w'
+
         for i in range(8):
             char = chr(ord('a') + i)
             num = i
@@ -103,10 +134,15 @@ class BoardController:
             self.board.grid_layout.addWidget(row_label, i, 8)
 
     def create_piece(
-        self, char: str, square: str, piece_style: str, parent: QWidget = None
-    ) -> ChessPiece:
+        self,
+        char: str,
+        square: str,
+        piece_style: str,
+        parent: Optional[QWidget] = None
+    ) -> Optional[ChessPiece]:
         color = 'white' if char.isupper() else 'black'
         is_active = color[0] == self.player_color
+
         if char in 'Kk':
             return King(square, color, piece_style, is_active, parent)
         elif char in 'Qq':
@@ -119,21 +155,30 @@ class BoardController:
             return Knight(square, color, piece_style, is_active, parent)
         elif char in 'Pp':
             return Pawn(square, color, piece_style, is_active, parent)
+        else:
+            return None
         
     def generate_legal_moves(self) -> List[str]:
         generator = self.board_controller.generate_legal_moves()
         return [move.uci() for move in generator]
     
     def handle_player_move(
-        self, piece: ChessPiece, row: int = None, col: int = None, square: str = None
+        self,
+        piece: ChessPiece,
+        row: Optional[int] = None,
+        col: Optional[int] = None,
+        square: Optional[str] = None
     ) -> None:
         if not self.is_board_active:
             return
+        
         target_square = (
             square if square is not None else self.get_board_square_name(row, col)
         )
         if self.check_for_promotion(piece, target_square):
-            promotion_piece = self.select_promotion_piece(piece.color, piece.piece_style)
+            promotion_piece = self.select_promotion_piece(
+                piece.color, piece.piece_style
+            )
             target_square_with_promotion = f'{target_square}{promotion_piece}'
             if self.validate_puzzle_move(piece, target_square_with_promotion):
                 self.handle_promotion_move(piece, target_square, promotion_piece)
@@ -166,15 +211,17 @@ class BoardController:
         promotion_piece = (
             promotion_piece.upper() if piece.color == 'white' else promotion_piece
         )
-        pr_piece = self.create_piece(
+        new_piece = self.create_piece(
             promotion_piece, target_square, self.board.board_style, self.board
         )
-        self.pieces.append(pr_piece)
+        self.pieces.append(new_piece)
         self.capture_piece(piece)
         self.board.grid_layout.addWidget(
-            pr_piece, *self.get_board_square_indexes(target_square)
+            new_piece, *self.get_board_square_indexes(target_square)
         )
-        is_piece_captured, target_piece = self.validate_capture(pr_piece, target_square)
+        is_piece_captured, target_piece = self.validate_capture(
+            new_piece, target_square
+        )
         if is_piece_captured:
             self.capture_piece(target_piece)
 
@@ -200,7 +247,7 @@ class BoardController:
 
     def validate_capture(
         self, piece: ChessPiece, target_square: str
-    ) -> Tuple[bool, ChessPiece]:
+    ) -> Tuple[bool, Optional[ChessPiece]]:
         piece_color = piece.color
         for other_piece in self.pieces:
             if other_piece.square == target_square and other_piece.color != piece_color:
@@ -234,7 +281,7 @@ class BoardController:
 
     def check_for_castling(
         self, piece: ChessPiece, target_square: str
-    ) -> Tuple[bool, str]:
+    ) -> Tuple[bool, Optional[str]]:
         move = f'{piece.square}{target_square}'
         if move in ('e1c1', 'e1g1', 'e8c8', 'e8g8'):
             return True, 'kingside' if move[2] == 'g' else 'queenside'
@@ -292,7 +339,7 @@ class BoardController:
 
     def signal_complete_puzzle(self) -> None:
         self.is_board_active = False
-        status = 3 if self.was_incorrect_move else 4
+        status = 3 if self.was_incorrect_move or self.was_hint_used else 4
         self.board.update_status(status)
 
 
@@ -308,8 +355,12 @@ class PromotionChoiceWindow(QDialog):
         self.connect_signals()
     
     def set_assets_dir(self) -> None:
-        self.assets_dir = os.path.normpath(os.path.join(
-            os.path.dirname(__file__), '..', 'assets', 'pieces', self.piece_style))
+        self.assets_dir = os.path.normpath(
+            os.path.join(
+                os.path.dirname(__file__), '..',
+                'assets', 'pieces', self.piece_style
+            )
+        )
 
     def initialize_layout(self) -> None:
         self.main_layout = QHBoxLayout(self)
@@ -378,9 +429,15 @@ class PromotionChoiceWindow(QDialog):
 
 
 class ChessBoardCoordinate(QLabel):
-    def __init__(self, text: str, type: str, parent: QWidget = None) -> None:
+    def __init__(
+        self, text: str, type: str, parent: Optional[QWidget] = None
+    ) -> None:
         super().__init__(text, parent)
         if type == 'col':
-            self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+            self.setAlignment(
+                Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
+            )
         elif type == 'row':
-            self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            self.setAlignment(
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+            )

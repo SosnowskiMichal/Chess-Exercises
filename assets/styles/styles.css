@@ -2,6 +2,10 @@ MainWindow {
     background-color: #2a2b2e;
 }
 
+QWidget {
+    color: white;
+}
+
 #menu-container {
     background-color: #5a5a66;
     border-radius: 10px;
@@ -37,8 +41,13 @@ MenuHeading {
     text-transform: uppercase;
 }
 
+RatingSelector {
+    background-color: #2a2b2e;
+}
+
 ThemeSelector {
     padding: 0 10px;
+    border-radius: 5px;
 }
 
 ChessBoardCoordinate {

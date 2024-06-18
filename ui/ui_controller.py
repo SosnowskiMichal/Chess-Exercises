@@ -1,17 +1,19 @@
 import os
 import re
 
-from PyQt6.QtWidgets import QStackedWidget, QMessageBox
+from typing import List, TYPE_CHECKING
+from PyQt6.QtWidgets import QMessageBox
 
-import board
 from data_managers import UserDataManager
-from ui import settings_menu
+
+if TYPE_CHECKING:
+    from main_window import MainWindow
 
 
 class UIController:
-    def __init__(self, main_window) -> None:
+    def __init__(self, main_window: 'MainWindow') -> None:
         self.main_window = main_window
-        self.central_widget: QStackedWidget = main_window.central_widget
+        self.central_widget = main_window.central_widget
         self.user_data_manager = UserDataManager()
         self.current_user_id = 1
 
@@ -39,6 +41,7 @@ class UIController:
         min_rating, max_rating = puzzle_manager.get_rating_range()
         themes = puzzle_manager.get_puzzle_themes()
         themes = ['--all--'] + self.parse_db_themes(themes, list=True)
+
         custom_puzzles_settings.min_rating_value.setRange(min_rating, max_rating)
         custom_puzzles_settings.max_rating_value.setRange(min_rating, max_rating)
         custom_puzzles_settings.min_rating_value.setValue(min_rating)
@@ -50,8 +53,12 @@ class UIController:
         user_board_style = user_settings.board_style
         user_piece_style = user_settings.piece_style
 
-        board_assets_dir = os.path.join(os.path.dirname(__file__), '..', 'assets', 'boards')
-        piece_assets_dir = os.path.join(os.path.dirname(__file__), '..', 'assets', 'pieces')
+        board_assets_dir = os.path.join(
+            os.path.dirname(__file__), '..', 'assets', 'boards'
+        )
+        piece_assets_dir = os.path.join(
+            os.path.dirname(__file__), '..', 'assets', 'pieces'
+        )
         board_styles = [
             entry for entry in os.listdir(board_assets_dir)
             if os.path.isdir(os.path.join(board_assets_dir, entry))
@@ -75,6 +82,7 @@ class UIController:
 
     def connect_puzzles_window_signals(self) -> None:
         puzzles_window = self.main_window.puzzles_window
+        puzzles_window.hint_button.clicked.connect(self.show_hint)
         puzzles_window.new_puzzle_button.clicked.connect(self.initialize_puzzle)
         puzzles_window.customize_puzzles_button.clicked.connect(self.customize_puzzles)
         puzzles_window.return_button.clicked.connect(self.close_puzzles_window)
@@ -127,7 +135,10 @@ class UIController:
         piece_style = settings_menu.pieces_styles_buttons.checkedButton()
 
         if board_style is None or piece_style is None:
-            self.show_error_popup_window('Select board and piece styles')
+            self.show_popup_window(
+                'info', 'No settings selected',
+                'Please select a board and piece style'
+            )
             return
         else:
             board_style = board_style.objectName()
@@ -136,7 +147,12 @@ class UIController:
                 self.current_user_id, board_style, piece_style
             )
             
-        self.main_window.puzzles_window.board_widget.set_style(board_style, piece_style)
+        self.main_window.puzzles_window.board_widget.set_style(
+            board_style, piece_style
+        )
+        self.show_popup_window(
+            'info', 'Settings saved', 'Your settings have been saved!'
+        )
 
     def initialize_custom_puzzles_window(self) -> None:
         custom_puzzles_settings = self.main_window.custom_puzzles_settings
@@ -144,7 +160,10 @@ class UIController:
         max_rating = custom_puzzles_settings.max_rating_value.value()
 
         if min_rating > max_rating:
-            self.show_error_popup_window('Invalid rating range')
+            self.show_popup_window(
+                'info', 'Invalid rating range',
+                'The minimum rating must be less than the maximum rating'
+            )
             return
         
         theme = custom_puzzles_settings.theme_value.currentText()
@@ -161,18 +180,26 @@ class UIController:
         custom_puzzles_settings.max_rating_value.setValue(max_rating)
         custom_puzzles_settings.theme_value.setCurrentIndex(0)
 
+    def show_hint(self) -> None:
+        puzzles_window = self.main_window.puzzles_window
+        move = puzzles_window.board_widget.board_controller.get_next_move()
+        if move is not None:
+            puzzles_window.status_label.setText('Hint: ' + move)
+
     def initialize_puzzle(self) -> None:
         puzzles_window = self.main_window.puzzles_window
         puzzles_window.board_widget.initialize_puzzle()
         puzzle_rating, puzzle_themes = (
             puzzles_window.board_widget.get_current_puzzle_info()
         )
+
         if puzzle_rating is None or puzzle_themes is None:
             return
+        
         puzzles_window.rating_value.setText(str(puzzle_rating))
         puzzles_window.themes_value.setText(self.parse_db_themes(puzzle_themes))
 
-    def parse_db_themes(self, themes: str, list: bool = False) -> str:
+    def parse_db_themes(self, themes: str, list: bool = False) -> List[str] | str:
         result = []
         if not list:
             themes = themes.split()
@@ -189,6 +216,7 @@ class UIController:
     def update_board_status(self, status: int) -> None:
         puzzles_window = self.main_window.puzzles_window
         _, puzzle_themes = puzzles_window.board_widget.get_current_puzzle_info()
+
         if status == 0:
             status_text = 'Make a move!'
         elif status == 1:
@@ -206,8 +234,12 @@ class UIController:
                 self.current_user_id, puzzle_themes, True
             )
         elif status == -1:
-            self.show_error_popup_window('No puzzles available')
+            self.show_popup_window(
+                'info', 'No puzzle available',
+                'There are no puzzles available with the selected criteria'
+            )
             return
+        
         puzzles_window.status_label.setText(status_text)
 
     def customize_puzzles(self) -> None:
@@ -275,14 +307,30 @@ class UIController:
             statistics_window.worst_percentage_value.setText(worst_percentage_text)
 
     def reset_progress(self) -> None:
-        # TODO: show confirm dialog
-        self.user_data_manager.reset_user_progress(self.current_user_id)
-        self.initialize_statistics()
+        confirmation = self.show_popup_window(
+            'question', 'Reset progress', 'Are you sure you want to reset your progress?'
+        )
+        if confirmation == QMessageBox.StandardButton.Yes:
+            self.user_data_manager.reset_user_progress(self.current_user_id)
+            self.initialize_statistics()
+            self.show_popup_window('info', 'Reset successful', 'Your progress has been reset!')
 
-    def show_error_popup_window(self, text: str = None) -> None:
+    def show_popup_window(self, type: str, title:str, text: str) -> int:
         msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Icon.Warning)
-        msg_box.setWindowTitle('Error')
+        if type == 'warn':
+            icon = QMessageBox.Icon.Warning
+        elif type == 'question':
+            icon = QMessageBox.Icon.Question
+        elif type == 'info':
+            icon = QMessageBox.Icon.Information
+        else:
+            icon = QMessageBox.Icon.NoIcon
+        msg_box.setIcon(icon)
+        msg_box.setWindowTitle(title)
         msg_box.setText(text)
-        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
-        msg_box.exec()
+        if type == 'question':
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        else:
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        return msg_box.exec()

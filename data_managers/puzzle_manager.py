@@ -1,11 +1,9 @@
 import os
-import csv
 
-from typing import List
+from typing import List, Optional, Tuple
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.orm.session import Session
-from sqlalchemy.engine import Engine
-from sqlalchemy import ForeignKey, create_engine, select, func
+from sqlalchemy import ForeignKey, create_engine, select, func, Row
 
 
 class Base(DeclarativeBase):
@@ -20,7 +18,7 @@ class PuzzleInfo(Base):
     rating_deviation: Mapped[int]
     themes: Mapped[str]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f'<PuzzleInfo(puzzle_id={self.puzzle_id}, '
             f'rating={self.rating}, '
@@ -32,11 +30,13 @@ class PuzzleInfo(Base):
 class PuzzleMoves(Base):
     __tablename__: str = 'puzzle_moves'
 
-    puzzle_id: Mapped[str] = mapped_column(ForeignKey('puzzle_info.puzzle_id'), primary_key=True)
+    puzzle_id: Mapped[str] = mapped_column(
+        ForeignKey('puzzle_info.puzzle_id'), primary_key=True
+    )
     fen: Mapped[str]
     moves: Mapped[str]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f'<PuzzleMoves(puzzle_id={self.puzzle_id}, '
             f'fen={self.fen}, '
@@ -45,35 +45,46 @@ class PuzzleMoves(Base):
 
 
 class PuzzleManager:
-    def __init__(self):
-        self.db_path: str = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), '..', 'data', 'puzzles.db'))
-        self.engine: Engine = None
-        self.session: Session = None
+    def __init__(self) -> None:
+        self.db_path = os.path.normpath(
+            os.path.join(
+                os.path.dirname(__file__), '..', 'data', 'puzzles_db.db'
+            )
+        )
+        self.engine = None
+        self.session = None
         self.rating_range = (None, None)
         self.puzzle_themes = None
         self.initialize_session()
 
-    def initialize_session(self):
+    def initialize_session(self) -> None:
         if self.session:
             self.session.close()
             self.session = None
         if self.engine:
             self.engine.dispose()
             self.engine = None
+
         self.engine = create_engine(f'sqlite:///{self.db_path}')
         self.session = Session(self.engine)
 
-    def get_puzzle(self, min_rating: int = None, max_rating: int = None, theme: str = None):
+    def get_puzzle(
+        self,
+        min_rating: Optional[int] = None,
+        max_rating: Optional[int] = None,
+        theme: Optional[str] = None
+    ) -> Optional[Row[Tuple[PuzzleInfo, PuzzleMoves]]]:
         query = (
             select(PuzzleInfo, PuzzleMoves)
             .join(PuzzleMoves, PuzzleInfo.puzzle_id == PuzzleMoves.puzzle_id)
         )
+
         if min_rating is not None and max_rating is not None:
             query = query.filter(
                 PuzzleInfo.rating >= min_rating,
                 PuzzleInfo.rating <= max_rating
             )
+
         if theme is not None:
             query = query.filter(PuzzleInfo.themes.contains(theme))
         query = query.order_by(func.random()).limit(1)
@@ -81,53 +92,21 @@ class PuzzleManager:
         puzzle = self.session.execute(query).one_or_none()
         return puzzle
     
-    def get_puzzle_themes(self):
+    def get_puzzle_themes(self) -> List[str]:
         if self.puzzle_themes is not None:
             return self.puzzle_themes
+        
         query = select(PuzzleInfo.themes).distinct()
         themes = self.session.execute(query).scalars().all()
         unique = set([t for theme in themes for t in theme.split()])
         self.puzzle_themes = sorted(unique)
         return self.puzzle_themes
     
-    def get_rating_range(self):
+    def get_rating_range(self) -> Tuple[Optional[int], Optional[int]]:
         if self.rating_range != (None, None):
             return self.rating_range
+        
         query = select(func.min(PuzzleInfo.rating), func.max(PuzzleInfo.rating))
         result = self.session.execute(query).one_or_none()
         self.rating_range = result
         return self.rating_range
-
-    # def create_database(self):
-    #     Base.metadata.create_all(self.engine)
-
-    # def load_data(self):
-    #     filepath: str = os.path.normpath(
-    #         os.path.join(os.path.dirname(__file__), '..', 'data', 'db_puzzle.csv'))
-    #     index: int = 1
-    #     try:
-    #         with open(filepath, 'r', encoding='utf-8', newline='') as file:
-    #             file_reader = csv.reader(file)
-    #             next(file_reader)
-    #             for row in file_reader:
-    #                 self.add_puzzle(row)
-    #                 index += 1
-    #         self.session.commit()
-    #     except Exception as e:
-    #         print(f'ERROR: {index}')
-    #         print(e.__class__.__name__)
-
-    # def add_puzzle(self, row: List[str]):
-    #     puzzle_info: PuzzleInfo = PuzzleInfo(
-    #         puzzle_id=row[0],
-    #         rating=int(row[3]),
-    #         rating_deviation=int(row[4]),
-    #         themes=row[7]
-    #     )
-    #     puzzle_moves: PuzzleMoves = PuzzleMoves(
-    #         puzzle_id=row[0],
-    #         fen=row[1],
-    #         moves=row[2]
-    #     )
-    #     self.session.add(puzzle_info)
-    #     self.session.add(puzzle_moves)

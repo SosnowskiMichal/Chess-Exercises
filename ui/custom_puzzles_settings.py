@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QSpinBox, QComboBox
 from PyQt6.QtCore import Qt
 
-from ui.main_menu import MainMenu, MenuButton, AppNameLabel, MenuHeading
+from .main_menu import MainMenu, MenuButton, AppNameLabel, MenuHeading
 
 
 class CustomPuzzlesSettings(QWidget):
@@ -36,11 +36,14 @@ class CustomPuzzlesSettings(QWidget):
         self.customization_container_layout.setColumnStretch(1, 1)
 
         min_rating_label = MenuHeading(
-            'Min rating:', Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            'Min rating:', Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         max_rating_label = MenuHeading(
-            'Max rating:', Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            'Max rating:', Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         theme_label = MenuHeading(
-            'Theme:', Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            'Theme:', Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         
         self.min_rating_value = RatingSelector()
         self.max_rating_value = RatingSelector()
@@ -74,3 +77,4 @@ class ThemeSelector(QComboBox):
     def __init__(self) -> None:
         super().__init__()
         self.setMinimumHeight(40)
+        self.setStyleSheet('background-color: #2a2b2e;')
