@@ -43,6 +43,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Chess Puzzles')
         self.setContentsMargins(10, 10, 10, 10)
         self.setMinimumSize(1400, 800)
+        self.showMaximized()
         
         self.initialize_central_widget()
         self.ui_controller = UIController(self)
