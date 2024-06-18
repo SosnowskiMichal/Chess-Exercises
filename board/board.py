@@ -1,4 +1,3 @@
-from optparse import Option
 import os
 
 from typing import Tuple, Optional
@@ -107,7 +106,7 @@ class ChessBoardSquare(QLabel):
     def dragEnterEvent(self, event: QMouseEvent) -> None:
         widget = event.source()
         if widget:
-            board: ChessBoard = self.parentWidget()
+            board = self.parentWidget()
             square_name = board.board_controller.get_board_square_name(
                 self.row, self.col
             )
